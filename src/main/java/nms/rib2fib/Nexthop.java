@@ -1,4 +1,4 @@
-package rib2fib;
+package nms.rib2fib;
 
 import net.named_data.jndn.Name;
 

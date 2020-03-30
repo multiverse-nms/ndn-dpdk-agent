@@ -1,6 +1,4 @@
-package rib2fib;
-
-import java.util.Objects;
+package nms.rib2fib;
 
 import net.named_data.jndn.Name;
 
@@ -11,7 +9,8 @@ public class Route {
 	private int cost;
 	private int origin;
 	boolean captureFlag = false;
-	boolean childInheritFlag = false;
+	boolean childInheritFlag = true;
+
 
 	public Route(Name prefix, int faceId, int origin) {
 		this.prefix = prefix;
@@ -51,6 +50,10 @@ public class Route {
 		this.origin = origin;
 	}
 
+	public boolean hasChildInheritFlag() {
+		return childInheritFlag;
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		// self check
@@ -64,7 +67,7 @@ public class Route {
 			return false;
 		Route route = (Route) o;
 		// field comparison
-		return Objects.equals(faceId, route.getFaceId()) && Objects.equals(origin, route.getOrigin());
+		return faceId == route.getFaceId() && origin == route.getOrigin();
 	}
 
 	@Override
