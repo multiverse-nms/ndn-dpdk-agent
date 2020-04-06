@@ -66,7 +66,6 @@ public class Rib {
 			public void handle(RibNode ribNode) {
 				FibNode fibNode = fib.findOrInsertEntry(ribNode.getName());
 				Map<Integer, Integer> nexthops = collectNexthops(ribNode);
-//				System.out.println(ribNode.getName() + ", routes " + routes);
 				nexthops.forEach((id, cost) -> {
 					fibNode.addNexthop(id, cost);
 				});
@@ -75,16 +74,6 @@ public class Rib {
 		return fib;
 	}
 
-	public void printParentOfEachNode() {
-		this.traverse(this.root, new RibNodeHandler() {
-			@Override
-			public void handle(RibNode ribNode) {
-				System.out.println("parent of node - " + ribNode.getParent());
-			}
-
-		});
-	}
-	
 	private int getLowestCost(int cost1, int cost2) {
 		return Math.min(cost1, cost2);
 	}
@@ -111,21 +100,6 @@ public class Rib {
 				 break;
 			isSelf = false;
 		}
-		return routes;
-	}
-
-	public Map<Integer, Integer> getInheritedRoutes(RibNode ribNode) {
-		Map<Integer, Integer> routes = new HashMap<>();
-		RibNode parent = ribNode.getParent();
-		if (parent == null) {
-			return routes;
-		}
-		parent.getRoutes().forEach((key, route) -> {
-			if (route.hasChildInheritFlag()) {
-				routes.put(route.getFaceId(), route.getCost());
-			}
-		});
-		routes.putAll(this.getInheritedRoutes(parent));
 		return routes;
 	}
 
