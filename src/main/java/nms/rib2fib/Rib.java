@@ -1,6 +1,7 @@
 package nms.rib2fib;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,15 +21,17 @@ public class Rib {
 	}
 
 	public RibNode findOrInsertEntry(Name name) {
-		RibNode entry = this.root;
+		RibNode node = this.root;
 		for (int i = 0; i < name.size(); i++) {
-			entry = entry.findOrInsertChild(name.get(i));
+			node = node.findOrInsertChild(name.get(i));
 		}
-		return entry;
+		return node;
 	}
 
 	private Route findOrInsertRoute(Route route) {
-		return this.findOrInsertEntry(route.getPrefix()).findOrInsertRoute(route);
+		RibNode node = this.findOrInsertEntry(route.getPrefix());
+		Route rt = node.findOrInsertRoute(route);
+		return rt;
 	}
 
 	public Rib addRoute(Route route) {
@@ -61,44 +64,68 @@ public class Rib {
 		this.traverse(this.root, new RibNodeHandler() {
 			@Override
 			public void handle(RibNode ribNode) {
-//				FibNode fibNode = fib.findOrInsertEntry(ribNode.getName());
-				fib.findOrInsertEntry(ribNode.getName());
-				Map<Integer, Integer> routes = collectRoutes(ribNode);
-				routes.forEach((id, cost) -> {
-					System.out.println("id=" + id + ", cost=" + cost);
+				FibNode fibNode = fib.findOrInsertEntry(ribNode.getName());
+				Map<Integer, Integer> nexthops = collectNexthops(ribNode);
+//				System.out.println(ribNode.getName() + ", routes " + routes);
+				nexthops.forEach((id, cost) -> {
+					fibNode.addNexthop(id, cost);
 				});
 			}
-
 		});
 		return fib;
 	}
 
-	private Map<Integer, Integer> collectRoutes(RibNode ribNode) {
-		RibNode parentNode = ribNode.getParent();
-		Map<Integer, Integer> routes = new HashMap<>();
-		System.out.println("ribNode parent " + parentNode);
-		if (parentNode == null) {
-			for (Map.Entry<RouteKey, Route> mapEntry : ribNode.getRoutes().entrySet()) {
-				Route route = mapEntry.getValue();
-				routes.put(route.getFaceId(), route.getCost());
+	public void printParentOfEachNode() {
+		this.traverse(this.root, new RibNodeHandler() {
+			@Override
+			public void handle(RibNode ribNode) {
+				System.out.println("parent of node - " + ribNode.getParent());
 			}
-		} else {
-			
-			Map<Integer, Integer> routesAtRibEntry = new HashMap<>();
-			for (Map.Entry<RouteKey, Route> mapEntry : parentNode.getRoutes().entrySet()) {
-				if (mapEntry.getValue().hasChildInheritFlag()) {
-					routesAtRibEntry.put(mapEntry.getKey().getFaceId(), mapEntry.getValue().getCost());
+
+		});
+	}
+	
+	private int getLowestCost(int cost1, int cost2) {
+		return Math.min(cost1, cost2);
+	}
+	
+
+	private Map<Integer, Integer> collectNexthops(RibNode ribNode) {
+		Map<Integer, Integer> routes = new HashMap<>();
+		List<RibNode> ancestors = ribNode.getAncestors();
+		boolean isSelf = true;
+		for (RibNode node: ancestors) {
+			Map<Integer, Integer> routesAtRibNode = new HashMap<>();
+			for (Route route: node.getRoutes().values()) {
+				if(isSelf || route.hasChildInheritFlag()) {
+					int faceId = route.getFaceId();
+					int cost = route.getCost();
+					int minCost = getLowestCost(routesAtRibNode.getOrDefault(faceId, Integer.MAX_VALUE), cost);
+					routesAtRibNode.put(faceId, minCost);
 				}
 			}
-			for (Map.Entry<Integer, Integer> mapEntry : routesAtRibEntry.entrySet()) {
-				routes.put(mapEntry.getKey(), mapEntry.getValue());
+			for (Map.Entry<Integer, Integer> entry: routesAtRibNode.entrySet()) {
+				routes.putIfAbsent(entry.getKey(), entry.getValue());
 			}
+			if (ribNode.hasCapture()) 
+				 break;
+			isSelf = false;
 		}
-		
-//		if (ribNode.hasCapture()) {
-//			//
-//		} 
+		return routes;
+	}
 
+	public Map<Integer, Integer> getInheritedRoutes(RibNode ribNode) {
+		Map<Integer, Integer> routes = new HashMap<>();
+		RibNode parent = ribNode.getParent();
+		if (parent == null) {
+			return routes;
+		}
+		parent.getRoutes().forEach((key, route) -> {
+			if (route.hasChildInheritFlag()) {
+				routes.put(route.getFaceId(), route.getCost());
+			}
+		});
+		routes.putAll(this.getInheritedRoutes(parent));
 		return routes;
 	}
 
@@ -119,34 +146,53 @@ public class Rib {
 		traverse(this.root, new RibNodeHandler() {
 			@Override
 			public void handle(RibNode ribNode) {
-				sb.append(ribNode).append("\n");
+				if (ribNode.hasRoutes()) {
+					sb.append(ribNode).append("\n");
+				}
 			}
-
 		});
 		return sb.toString();
 	}
 
+	public void insertRoutes(List<Route> routes) {
+		routes.forEach(route -> {
+			this.findOrInsertRoute(route);
+		});
+	}
+
 	public static void main(String[] args) {
 		Rib rib = new Rib();
-		Route route1 = new Route(new Name("/a/b/c"), 1000, 1);
-		rib.addRoute(route1);
-		Route route2 = new Route(new Name("/a/b/d"), 1002, 0);
-		rib.addRoute(route2);
-		Route route3 = new Route(new Name("/b/c"), 1003, 0);
-		rib.addRoute(route3);
 
-		List<Name> names = new ArrayList<>();
-		rib.traverse(rib.getRoot(), new RibNodeHandler() {
+		Route routeA1 = new Route(new Name("/a"), 1, 0);
+		routeA1.setCost(10);
+		routeA1.setChildInheritFlag(false);
 
-			@Override
-			public void handle(RibNode entry) {
-				names.add(entry.getName());
-			}
+		Route routeA2 = new Route(new Name("/a"), 1, 1);
+		routeA2.setCost(20);
 
-		});
+		Route routeA3 = new Route(new Name("/a"), 2, 0);
+		routeA3.setCost(30);
+		routeA3.setChildInheritFlag(false);
+
+		Route routeAB1 = new Route(new Name("/a/b"), 1, 0);
+		routeAB1.setCost(40);
+
+		Route routeAB2 = new Route(new Name("/a/b"), 2, 0);
+		routeAB2.setCost(50);
+
+		Route routeABC = new Route(new Name("/a/b/c"), 3, 0);
+		routeABC.setCost(60);
+
+		Route routeABCD = new Route(new Name("/a/b/c/d"), 4, 0);
+		routeABCD.setCost(70);
+		routeABCD.setCaptureFlag(true);
+
+		List<Route> routes = new ArrayList<>();
+		routes.addAll(Arrays.asList(routeA1, routeA2, routeA3, routeAB1, routeAB2, routeABC, routeABCD));
+
+		rib.insertRoutes(routes);
 
 		System.out.println("RIB:\n" + rib);
 		System.out.println("FIB:\n" + rib.toFib());
-
 	}
 }

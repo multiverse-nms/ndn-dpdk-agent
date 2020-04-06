@@ -1,8 +1,6 @@
 package nms.rib2fib;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import net.named_data.jndn.Name;
@@ -63,17 +61,6 @@ public class FibNode {
 		this.children.put(comp, node);
 		return node;
 	}
-	
-	
-//	public Nexthop findOrInsertNexthop(Nexthop nexthop) {
-//		for (Nexthop nh: nexthops) {
-//			if (nh.equals(nexthop)) {
-//				return nh;
-//			}
-//			this.nexthops.add(nexthop);
-//		}
-//		return nexthop;
-//	}
 
 	public void setComponent(Component component) {
 		this.component = component;
@@ -117,10 +104,24 @@ public class FibNode {
 	}
 	
 	
+	public void addNexthop(int face, int cost) {
+		this.nexthops.put(face, cost);
+	}
+	
+	public boolean hasNexthops() {
+		return this.nexthops.size() > 0;
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("name: ").append(this.getName().toString()).append("\n");
+		sb.append("prefix: ").append(this.getName().toString());
+		sb.append(", nexthops: [");
+		nexthops.forEach((faceId, cost) -> {
+			sb.append(" { faceId: ").append(faceId);
+			sb.append(", cost: ").append(cost).append(" }");
+		});
+		sb.append(" ]").append("\n");
 		return sb.toString();
 	}
 	

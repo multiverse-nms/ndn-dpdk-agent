@@ -47,4 +47,12 @@ public class Nexthop {
 	
 	
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("name: ").append(this.prefix);
+		sb.append(", faceId: ").append(this.faceId);
+		sb.append(", cost: ").append(this.cost);
+		return sb.toString();
+	}
 }

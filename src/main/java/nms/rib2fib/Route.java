@@ -11,11 +11,12 @@ public class Route {
 	boolean captureFlag = false;
 	boolean childInheritFlag = true;
 
-
 	public Route(Name prefix, int faceId, int origin) {
 		this.prefix = prefix;
 		this.faceId = faceId;
 		this.origin = origin;
+		this.captureFlag = false;
+		this.childInheritFlag = true;
 	}
 
 	public Name getPrefix() {
@@ -50,10 +51,26 @@ public class Route {
 		this.origin = origin;
 	}
 
-	public boolean hasChildInheritFlag() {
-		return childInheritFlag;
+	public void setChildInheritFlag(boolean value) {
+		this.childInheritFlag = value;
 	}
 	
+	public boolean hasChildInheritFlag() {
+		return this.childInheritFlag;
+	}
+	
+	public void setCaptureFlag(boolean value) {
+		this.captureFlag = value;
+	}
+	
+	public boolean hasCaptureFlag() {
+		return this.captureFlag;
+	}
+
+	public Nexthop toNexthop() {
+		return new Nexthop(this.prefix, this.faceId, this.cost);
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		// self check
@@ -73,10 +90,7 @@ public class Route {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-
-		sb.append("prefix: ").append(this.prefix).append(", faceId: ").append(this.faceId).append(", cost: ")
-				.append(this.cost);
-
+		sb.append(" { faceId: ").append(this.faceId).append(", cost: ").append(this.cost).append(" }");
 		return sb.toString();
 	}
 }

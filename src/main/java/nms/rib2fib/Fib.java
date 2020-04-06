@@ -1,65 +1,64 @@
 package nms.rib2fib;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.named_data.jndn.Name;
-import net.named_data.jndn.Name.Component;
 
 public class Fib {
-	
+
 	private FibNode root;
-	
+
 	public Fib() {
 		this.root = new FibNode();
 	}
-	
-	
+
 	public FibNode getRoot() {
 		return this.root;
 	}
-	
+
 	public void setRoot(FibNode root) {
 		this.root = root;
 	}
-	
-	
+
 	public FibNode findOrInsertEntry(Name name) {
 		FibNode entry = this.root;
-		for (int i =0; i<name.size(); i++ ) {
+		for (int i = 0; i < name.size(); i++) {
 			entry = entry.findOrInsertChild(name.get(i));
 		}
 		return entry;
 	}
-	
-	
-//	public Nexthop findOrInsertNexthop(Nexthop nexthop) {
-//		return this.findOrInsertEntry(nexthop.getPrefix()).findOrInsertNexthop(nexthop);
-//	}
-	
-	
+
 	public void eraseFibNode() {
-		
+
 	}
-	
-	public void print(FibNode entry, String appender) {
-		Component comp = entry.getComponent();
-		if (comp == null) {
-			comp = new Component("");
-		}
-		System.out.println(appender + comp.toEscapedString());
-		entry.getChildren().forEach((c, child) -> print(child, appender + appender));
+
+	public List<FibCommand> compare(Fib newFib) {
+		List<FibCommand> commands = new ArrayList<FibCommand>();
+
+		this.traverse(this.root, new FibNodeHandler() {
+			@Override
+			public void handle(FibNode fibNode) {
+
+			}
+		});
+
+		return commands;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		traverse(this.root, new FibNodeHandler() {
 			@Override
 			public void handle(FibNode fibNode) {
-				sb.append(fibNode);
+				if (fibNode.hasNexthops()) {
+					sb.append(fibNode);
+				}
 			}
 		});
-		return sb.toString();	
+		return sb.toString();
 	}
-
 
 	private void traverse(FibNode node, FibNodeHandler handler) {
 		handler.handle(node);

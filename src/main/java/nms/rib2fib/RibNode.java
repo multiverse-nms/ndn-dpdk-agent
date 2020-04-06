@@ -1,6 +1,8 @@
 package nms.rib2fib;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.named_data.jndn.Name;
@@ -12,8 +14,7 @@ public class RibNode {
 	private RibNode parent;
 	private Map<Component, RibNode> children;
 	private Map<RouteKey, Route> routes;
-	private boolean hasCapture;
-
+	private int nCaptures = 0;
 
 	public RibNode() {
 		this.parent = null;
@@ -30,15 +31,14 @@ public class RibNode {
 		this.children = new HashMap<>();
 		this.routes = new HashMap<>();
 	}
-	
 
 	public Component getComponent() {
-		if(this.parent == null ) {
+		if (this.parent == null) {
 			throw new NullPointerException("parent is null");
 		}
 		return this.component;
 	}
-	
+
 	public Name getName() {
 		if (parent == null) {
 			return new Name();
@@ -59,25 +59,41 @@ public class RibNode {
 		return child;
 	}
 
-	
 	public Route findOrInsertRoute(Route route) {
 		RouteKey routeKey = new RouteKey(route.getFaceId(), route.getOrigin());
 		Route found = this.routes.get(routeKey);
 		if (found == null) {
 			found = route;
+			if (route.hasCaptureFlag()) {
+				this.nCaptures++;
+			}
 			this.routes.put(routeKey, found);
 		}
 		return found;
 	}
 	
+	
+	public List<RibNode> getAncestors() {
+		List<RibNode> ancestors = new ArrayList<>();
+		ancestors.add(this);
+		RibNode parent = this.parent;
+		while(parent != null) {
+			ancestors.add(parent);
+			parent = parent.getParent();
+		}
+		return ancestors;
+	}
+
 	public void eraseRoute(Route route) {
 		RouteKey routeKey = new RouteKey(route.getFaceId(), route.getOrigin());
 		Route found = this.routes.get(routeKey);
-		if (found == null) {
+		if (found != null) {
+			if (found.hasCaptureFlag()) {
+				this.nCaptures--;
+			}
 			this.routes.remove(routeKey);
 		}
 	}
-
 
 	public void setComponent(Component component) {
 		this.component = component;
@@ -99,7 +115,6 @@ public class RibNode {
 		this.children = children;
 	}
 
-
 	public Map<RouteKey, Route> getRoutes() {
 		return routes;
 	}
@@ -111,20 +126,25 @@ public class RibNode {
 	public boolean hasChildren() {
 		return this.children.isEmpty() == false;
 	}
-	
+
 	public boolean hasCapture() {
-		return hasCapture;
+		return this.nCaptures > 0;
+	}
+
+	public boolean hasRoutes() {
+		return this.routes.size() > 0;
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("routes: [");
-		routes.forEach((routeKey, route) -> {
+		List<Route> routesList = new ArrayList<Route>(this.routes.values());
+		sb.append("prefix: ").append(this.getName().toString());
+		sb.append(", routes: [");
+		routesList.forEach(route -> {
 			sb.append(route);
 		});
-		sb.append("]");
+		sb.append(" ]");
 		return sb.toString();
 	}
-
 }
