@@ -60,7 +60,7 @@ public class Fib {
 		return sb.toString();
 	}
 
-	private void traverse(FibNode node, FibNodeHandler handler) {
+	public void traverse(FibNode node, FibNodeHandler handler) {
 		handler.handle(node);
 		node.getChildren().forEach((comp, child) -> {
 			traverse(child, handler);

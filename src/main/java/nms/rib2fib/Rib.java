@@ -77,27 +77,26 @@ public class Rib {
 	private int getLowestCost(int cost1, int cost2) {
 		return Math.min(cost1, cost2);
 	}
-	
 
 	private Map<Integer, Integer> collectNexthops(RibNode ribNode) {
 		Map<Integer, Integer> routes = new HashMap<>();
 		List<RibNode> ancestors = ribNode.getAncestors();
 		boolean isSelf = true;
-		for (RibNode node: ancestors) {
+		for (RibNode node : ancestors) {
 			Map<Integer, Integer> routesAtRibNode = new HashMap<>();
-			for (Route route: node.getRoutes().values()) {
-				if(isSelf || route.hasChildInheritFlag()) {
+			for (Route route : node.getRoutes().values()) {
+				if (isSelf || route.hasChildInheritFlag()) {
 					int faceId = route.getFaceId();
 					int cost = route.getCost();
 					int minCost = getLowestCost(routesAtRibNode.getOrDefault(faceId, Integer.MAX_VALUE), cost);
 					routesAtRibNode.put(faceId, minCost);
 				}
 			}
-			for (Map.Entry<Integer, Integer> entry: routesAtRibNode.entrySet()) {
+			for (Map.Entry<Integer, Integer> entry : routesAtRibNode.entrySet()) {
 				routes.putIfAbsent(entry.getKey(), entry.getValue());
 			}
-			if (ribNode.hasCapture()) 
-				 break;
+			if (ribNode.hasCapture())
+				break;
 			isSelf = false;
 		}
 		return routes;
