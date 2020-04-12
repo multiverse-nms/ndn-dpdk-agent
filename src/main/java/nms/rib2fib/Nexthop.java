@@ -52,7 +52,7 @@ public class Nexthop {
 
 		Nexthop hop = (Nexthop) o;
 
-		return this.prefix == hop.getPrefix() && this.faceId == hop.getFaceId() && this.cost == hop.getCost();
+		return this.prefix.equals(hop.getPrefix()) && this.faceId == hop.getFaceId() && this.cost == hop.getCost();
 	}
 
 	@Override
