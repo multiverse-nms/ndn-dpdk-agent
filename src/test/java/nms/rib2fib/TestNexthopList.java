@@ -21,8 +21,8 @@ class TestNexthopList {
 		list2.addnexthop(new Name("/a/b/d"), 2, 20);
 		list2.addnexthop(new Name("/a/b/e"), 3, 30);
 		
-		System.out.println("list1:\n" + list1.getNexthops());
-		System.out.println("list2:\n" + list2.getNexthops());
+		System.out.println("list1:\n" + list1.getList());
+		System.out.println("list2:\n" + list2.getList());
 		
 		// equal
 		assertTrue(list1.equals(list2));
