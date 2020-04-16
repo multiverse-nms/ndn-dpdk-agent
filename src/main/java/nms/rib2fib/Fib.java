@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.named_data.jndn.Name;
+import net.named_data.jndn.Name.Component;
+import nms.rib2fib.commands.FibCommand;
 
 public class Fib {
 
@@ -33,19 +35,12 @@ public class Fib {
 
 	}
 
-	public List<FibCommand> compare(Fib newFib) {
-		List<FibCommand> commands = new ArrayList<FibCommand>();
-
-		this.traverse(this.root, new FibNodeHandler() {
-			@Override
-			public void handle(FibNode fibNode) {
-
-			}
-		});
-
-		return commands;
+	public List<FibCommand> compare(Fib fib) {
+		List<FibCommand> commands = new ArrayList<>();
+		this.root.diff(new Name(""), fib.getRoot() , commands);
+		return commands;	
 	}
-
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -65,5 +60,18 @@ public class Fib {
 		node.getChildren().forEach((comp, child) -> {
 			traverse(child, handler);
 		});
+	}
+	
+	
+	public static void main(String[] args) {
+		FibNode root = new FibNode();
+		Fib fib = new Fib();
+		fib.setRoot(root);
+		FibNode nodeA = new FibNode(new Component("a"), root);
+		FibNode nodeAB = new FibNode(new Component("b"), nodeA);
+		FibNode nodeAC = new FibNode(new Component("c"), nodeA);
+		FibNode nodeD = new FibNode(new Component("d"), root);
+	
+		System.out.println(fib);
 	}
 }

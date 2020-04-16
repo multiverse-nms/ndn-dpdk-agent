@@ -1,26 +1,30 @@
 package nms.rib2fib;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import net.named_data.jndn.Name;
 import net.named_data.jndn.Name.Component;
+import nms.rib2fib.commands.FibCommand;
+import nms.rib2fib.commands.FibErase;
+import nms.rib2fib.commands.FibInsert;
 
 public class FibNode {
 
 	private Component component;
 	private FibNode parent;
 	private Map<Component, FibNode> children;
-	private Map<Integer, Integer> nexthops;
+//	private Map<Integer, Integer> nexthops;
+	private NexthopList nexthops;
 
 	public FibNode() {
 		this.component = null;
 		this.parent = null;
 		this.children = new HashMap<>();
-		this.nexthops = new HashMap<>();
+		this.nexthops = new NexthopList();
 	}
 
 	public FibNode(Component comp, FibNode parent) {
@@ -30,7 +34,7 @@ public class FibNode {
 		this.component = comp;
 		this.parent = parent;
 		this.children = new HashMap<>();
-		this.nexthops = new HashMap<>();
+		this.nexthops = new NexthopList();
 	}
 
 	public Name getName() {
@@ -89,30 +93,47 @@ public class FibNode {
 		this.children = children;
 	}
 
-	public Map<Integer, Integer> getNexthops() {
-		return nexthops;
+	public NexthopList getNexthops() {
+		return this.nexthops;
 	}
-	
+
 	public List<Nexthop> getNexthopsList() {
-		List<Nexthop> nexthops = new ArrayList<>();
-		Name name = this.getName();
-		this.nexthops.forEach((faceId, cost)->{
-			nexthops.add(new Nexthop(name, faceId, cost));
-		});
-		return nexthops;
+		return this.nexthops.getList();
 	}
 
-	public void setNexthops(Map<Integer, Integer> nexthops) {
-		this.nexthops = nexthops;
-	}
-
-	public void addNexthop(int face, int cost) {
-		this.nexthops.put(face, cost);
+	public void addNexthop(int faceId, int cost) {
+		this.nexthops.addnexthop(getName(), faceId, cost);
+		Collections.sort(this.nexthops.getList());
 	}
 
 	public boolean hasNexthops() {
 		return this.nexthops.size() > 0;
 	}
+
+	public void diff(Name name, FibNode prev, List<FibCommand> commands) {
+		if (prev == null || !prev.getNexthops().equals(this.getNexthops())) {
+			commands.add(new FibInsert(name, this.nexthops));
+		}
+
+		Map<Component, FibNode> prevChildren = new HashMap<>();
+		if (prev != null)
+			prevChildren = prev.children;
+
+		List<Component> prevChildrenComponents = new ArrayList<>(prevChildren.keySet());
+
+		for (Map.Entry<Component, FibNode> entry : this.children.entrySet()) {
+			Component comp = entry.getKey();
+			FibNode child = entry.getValue();
+			child.diff(this.getName().append(comp), prevChildren.getOrDefault(comp, null), commands);
+			prevChildrenComponents.remove(comp);
+		}
+		
+		for (Component comp: prevChildrenComponents) {
+			commands.add(new FibErase(name.append(comp)));
+		}
+
+	}
+	
 
 	@Override
 	public boolean equals(Object o) {
@@ -136,9 +157,9 @@ public class FibNode {
 		StringBuilder sb = new StringBuilder();
 		sb.append("prefix: ").append(this.getName().toString());
 		sb.append(", nexthops: [");
-		nexthops.forEach((faceId, cost) -> {
-			sb.append(" { faceId: ").append(faceId);
-			sb.append(", cost: ").append(cost).append(" }");
+		nexthops.getList().forEach((nexthop) -> {
+			sb.append(" { faceId: ").append(nexthop.getFaceId());
+			sb.append(", cost: ").append(nexthop.getCost()).append(" }");
 		});
 		sb.append(" ]").append("\n");
 		return sb.toString();
