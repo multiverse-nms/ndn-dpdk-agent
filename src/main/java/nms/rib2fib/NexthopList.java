@@ -13,19 +13,22 @@ public class NexthopList {
 		this.nexthops = new ArrayList<>();
 	}
 
-	public List<Nexthop> getNexthops() {
+	public List<Nexthop> getList() {
 		return nexthops;
 	}
 
 	public void addnexthop(Name name, int faceId, int cost) {
 		this.nexthops.add(new Nexthop(name, faceId, cost));
 	}
-	
+
 	public void removeNexthop(Name name, int faceId, int cost) {
 		this.nexthops.remove(new Nexthop(name, faceId, cost));
 	}
-	
-	
+
+	public int size() {
+		return this.nexthops.size();
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		// self check
@@ -39,7 +42,12 @@ public class NexthopList {
 			return false;
 		NexthopList list = (NexthopList) o;
 		// field comparison
-		return list.getNexthops().equals(this.nexthops);
+		return list.getList().equals(this.nexthops);
+	}
+
+	@Override
+	public String toString() {
+		return this.nexthops.toString();
 	}
 
 }

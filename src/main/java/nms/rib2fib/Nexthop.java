@@ -2,7 +2,7 @@ package nms.rib2fib;
 
 import net.named_data.jndn.Name;
 
-public class Nexthop {
+public class Nexthop implements Comparable<Nexthop> {
 
 	private Name prefix;
 	private int faceId;
@@ -52,15 +52,20 @@ public class Nexthop {
 
 		Nexthop hop = (Nexthop) o;
 
-		return this.prefix.equals(hop.getPrefix()) && this.faceId == hop.getFaceId() && this.cost == hop.getCost();
+		return this.prefix.equals(hop.getPrefix()) && this.faceId == hop.getFaceId();
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("name: ").append(this.prefix.toUri());
-		sb.append(", faceId: ").append(this.faceId);
+//		sb.append("name: ").append(this.prefix.toUri());
+		sb.append("faceId: ").append(this.faceId);
 		sb.append(", cost: ").append(this.cost);
 		return sb.toString();
+	}
+
+	@Override
+	public int compareTo(Nexthop nexthop) {
+		return this.getCost() < nexthop.getCost() ? 1 : this.getCost() > nexthop.getCost() ? -1 : 0;
 	}
 }
