@@ -50,7 +50,6 @@ public class Rib {
 			entry.getParent().getChildren().remove(entry.getComponent());
 			entry = entry.getParent();
 		}
-
 	}
 
 	public Rib removeRoute(Route route) {
@@ -164,7 +163,7 @@ public class Rib {
 		routes.addAll(Arrays.asList(routeA1, routeA2, routeA3, routeAB1, routeAB2, routeABC, routeABCD));
 
 		rib.insertRoutes(routes);
-
+		
 		System.out.println("RIB:\n" + rib);
 		System.out.println("FIB:\n" + rib.toFib());
 	}
