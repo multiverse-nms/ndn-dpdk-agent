@@ -36,8 +36,7 @@ public class Rib {
 
 	public Rib addRoute(Route route) {
 		Rib newRib = new Rib(this.root);
-		this.findOrInsertRoute(route);
-//		newRib.findOrInsertRoute(route);
+		newRib.findOrInsertRoute(route);
 		return newRib;
 	}
 
@@ -55,8 +54,7 @@ public class Rib {
 
 	public Rib removeRoute(Route route) {
 		Rib newRib = new Rib(this.root);
-		this.eraseRoute(route);
-//		newRib.eraseRoute(route);
+		newRib.eraseRoute(route);
 		return newRib;
 	}
 
