@@ -15,19 +15,6 @@ public class RibServiceImpl implements RibService {
 		LOG.info("new empty RIB instantiated");
 	}
 	
-	
-	@Override
-	public void addRoute(Name name, int face, int origin) {
-		rib.addRoute(new Route(name, face, origin));
-		
-	}
-
-	@Override
-	public void removeRoute(Name name, int face, int origin) {
-		rib.removeRoute(new Route(name, face, origin));
-	}
-
-
 	@Override
 	public void addRoute(Route route, RibHandler handler) {
 		// TODO Auto-generated method stub
