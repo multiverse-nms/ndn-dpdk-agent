@@ -1,5 +1,7 @@
-package nms.rib2fib;
+package nms.rib;
 
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import net.named_data.jndn.Name;
 
 public class Nexthop implements Comparable<Nexthop> {
@@ -67,5 +69,12 @@ public class Nexthop implements Comparable<Nexthop> {
 	@Override
 	public int compareTo(Nexthop nexthop) {
 		return this.getCost() < nexthop.getCost() ? 1 : this.getCost() > nexthop.getCost() ? -1 : 0;
+	}
+	
+	public JsonObject toJsonObject() {
+		JsonObject json = new JsonObject();
+		json.put("face_id", faceId);
+		json.put("cost", cost);
+		return json;
 	}
 }

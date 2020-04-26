@@ -1,8 +1,10 @@
-package nms.rib2fib;
+package nms.rib;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import net.named_data.jndn.Name;
 
 public class NexthopList {
@@ -49,5 +51,13 @@ public class NexthopList {
 	public String toString() {
 		return this.nexthops.toString();
 	}
-
+	
+	public JsonArray toJsonArray() {
+		JsonArray array = new JsonArray();
+		nexthops.forEach(nexthop -> {
+			array.add(nexthop.toJsonObject());
+		});
+		return array;
+	}
+	
 }

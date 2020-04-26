@@ -1,4 +1,4 @@
-package nms.rib2fib;
+package nms.rib;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,9 +8,9 @@ import java.util.Map;
 
 import net.named_data.jndn.Name;
 import net.named_data.jndn.Name.Component;
-import nms.rib2fib.commands.FibCommand;
-import nms.rib2fib.commands.FibErase;
-import nms.rib2fib.commands.FibInsert;
+import nms.rib.commands.FibCommand;
+import nms.rib.commands.FibErase;
+import nms.rib.commands.FibInsert;
 
 public class FibNode {
 

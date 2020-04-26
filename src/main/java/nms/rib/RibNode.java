@@ -1,4 +1,4 @@
-package nms.rib2fib;
+package nms.rib;
 
 import java.util.ArrayList;
 import java.util.HashMap;

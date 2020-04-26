@@ -1,7 +1,8 @@
-package nms.rib2fib.commands;
+package nms.rib.commands;
 
+import io.vertx.core.json.JsonObject;
 import net.named_data.jndn.Name;
-import nms.rib2fib.NexthopList;
+import nms.rib.NexthopList;
 
 public class FibInsert implements FibCommand {
 
@@ -26,6 +27,14 @@ public class FibInsert implements FibCommand {
 		sb.append("name: ").append(name);
 		sb.append(", nexthops:").append(nexthops);
 		return sb.toString();
+	}
+
+	@Override
+	public JsonObject toEventBusFormat() {
+		JsonObject json = new JsonObject();
+		json.put("name", name.toUri());
+		json.put("nexthops", nexthops.toJsonArray());
+		return json;
 	}
 
 }

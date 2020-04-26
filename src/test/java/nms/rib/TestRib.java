@@ -1,4 +1,4 @@
-package nms.rib2fib;
+package nms.rib;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,6 +11,13 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import net.named_data.jndn.Name;
+import nms.rib.Fib;
+import nms.rib.FibNode;
+import nms.rib.FibNodeHandler;
+import nms.rib.Rib;
+import nms.rib.RibNode;
+import nms.rib.RibNodeHandler;
+import nms.rib.Route;
 
 class TestRib {
 

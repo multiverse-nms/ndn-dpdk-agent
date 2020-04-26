@@ -1,11 +1,11 @@
-package nms.rib2fib;
+package nms.rib;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import net.named_data.jndn.Name;
 import net.named_data.jndn.Name.Component;
-import nms.rib2fib.commands.FibCommand;
+import nms.rib.commands.FibCommand;
 
 public class Fib {
 

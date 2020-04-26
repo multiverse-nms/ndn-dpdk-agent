@@ -1,6 +1,6 @@
-package nms.rib2fib.service;
+package nms.rib.service;
 
-import nms.rib2fib.Rib;
+import nms.rib.Rib;
 
 public interface RibHandler {
 	

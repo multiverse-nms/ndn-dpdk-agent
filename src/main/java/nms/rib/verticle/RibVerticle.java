@@ -1,23 +1,32 @@
-package nms.rib2fib.verticle;
+package nms.rib.verticle;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import net.named_data.jndn.Name;
-import nms.rib2fib.Rib;
-import nms.rib2fib.RibAction;
-import nms.rib2fib.Route;
-import nms.rib2fib.service.RibHandler;
-import nms.rib2fib.service.RibService;
-import nms.rib2fib.service.RibServiceImpl;
+import nms.rib.Fib;
+import nms.rib.Rib;
+import nms.rib.RibAction;
+import nms.rib.Route;
+import nms.rib.commands.FibCommand;
+import nms.rib.service.RibHandler;
+import nms.rib.service.RibService;
+import nms.rib.service.RibServiceImpl;
 
 public class RibVerticle extends AbstractVerticle {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RibVerticle.class);
-	private static String EVENTBUS_ADDRESS = "rib-verticle.eventbus";
+	private static String RIB_EVENTBUS_ADDRESS = "rib-verticle.eventbus";
+	private static String FORWARDER_EVENTBUS_ADDRESS = "rib-verticle.eventbus";
 	private RibService ribService;
+	private Fib currentFib;
 
 	@Override
 	public void start(Promise<Void> startFuture) {
@@ -25,8 +34,9 @@ public class RibVerticle extends AbstractVerticle {
 		this.ribService = new RibServiceImpl();
 		LOG.info("instantiated RIB Service");
 
+		currentFib = new Fib(); // the agent starts with an empty fib
 		// setup EventBus
-		this.consumeEventBus(EVENTBUS_ADDRESS);
+		this.consumeEventBus(RIB_EVENTBUS_ADDRESS);
 
 	}
 
@@ -42,13 +52,23 @@ public class RibVerticle extends AbstractVerticle {
 				int faceId = body.getInteger("faceId");
 				int origin = body.getInteger("origin");
 				ribService.addRoute(new Route(name, faceId, origin), new RibHandler() {
-
 					@Override
 					public void handleRib(Rib rib) {
-						// TODO Auto-generated method stub
-						
+						Fib fib = rib.toFib();
+						// get the fib commands that need to be sent to the forward verticle
+						List<FibCommand> fibCommands = fib.compare(currentFib);
+						List<Future> allFutures = new ArrayList<>();
+						fibCommands.forEach(command -> {
+							allFutures.add(sendCommandToForwarderVerticle(command));
+						});
+						CompositeFuture.all(allFutures).onComplete(ar -> {
+							if (ar.succeeded()) {
+								LOG.debug("all commands were executed successfully");
+							} else {
+								LOG.debug("something went bad");
+							}
+						});
 					}
-					
 				});
 			}
 
@@ -57,17 +77,26 @@ public class RibVerticle extends AbstractVerticle {
 				int faceId = body.getInteger("faceId");
 				int origin = body.getInteger("origin");
 				ribService.removeRoute(new Route(name, faceId, origin), new RibHandler() {
-
 					@Override
 					public void handleRib(Rib rib) {
-						// TODO Auto-generated method stub
-						
+
 					}
-					
 				});
 			}
 		});
 
+	}
+
+	private Future<Void> sendCommandToForwarderVerticle(FibCommand command) {
+		Promise<Void> promise = Promise.promise();
+		vertx.eventBus().request(FORWARDER_EVENTBUS_ADDRESS, command.toEventBusFormat(), ar -> {
+			if (ar.succeeded()) {
+				promise.complete();
+			} else {
+				promise.fail(ar.cause());
+			}
+		});
+		return promise.future();
 	}
 
 	@Override

@@ -1,5 +1,6 @@
-package nms.rib2fib.commands;
+package nms.rib.commands;
 
+import io.vertx.core.json.JsonObject;
 import net.named_data.jndn.Name;
 
 public class FibErase implements FibCommand {
@@ -19,6 +20,13 @@ public class FibErase implements FibCommand {
 	@Override
 	public String toString() {
 		return "ERASE " + name.toUri();
+	}
+
+	@Override
+	public JsonObject toEventBusFormat() {
+		JsonObject json = new JsonObject();
+		json.put("name", name.toUri());
+		return json;
 	}
 
 

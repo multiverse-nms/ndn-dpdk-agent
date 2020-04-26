@@ -17,6 +17,22 @@
 			<artifactId>vertx-core</artifactId>
 			<version>3.9.0</version>
 		</dependency>
+		<dependency>
+			<groupId>com.github.arteam</groupId>
+			<artifactId>simple-json-rpc-client</artifactId>
+			<version>0.9</version>
+		</dependency>
+		<dependency>
+			<groupId>io.vertx</groupId>
+			<artifactId>vertx-web</artifactId>
+			<version>3.8.5</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.vertx</groupId>
+			<artifactId>vertx-config</artifactId>
+			<version>3.8.5</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>

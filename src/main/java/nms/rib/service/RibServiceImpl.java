@@ -1,10 +1,10 @@
-package nms.rib2fib.service;
+package nms.rib.service;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import net.named_data.jndn.Name;
-import nms.rib2fib.Rib;
-import nms.rib2fib.Route;
+import nms.rib.Rib;
+import nms.rib.Route;
 
 public class RibServiceImpl implements RibService {
 	private static final Logger LOG = LoggerFactory.getLogger(RibServiceImpl.class);

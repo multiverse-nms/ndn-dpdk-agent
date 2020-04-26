@@ -1,10 +1,11 @@
-package nms.rib2fib;
+package nms.rib;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
 import net.named_data.jndn.Name;
+import nms.rib.NexthopList;
 
 class TestNexthopList {
 

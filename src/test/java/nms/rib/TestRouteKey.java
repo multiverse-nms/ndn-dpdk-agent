@@ -1,4 +1,4 @@
-package nms.rib2fib;
+package nms.rib;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -7,6 +7,8 @@ import java.util.HashMap;
 import org.junit.jupiter.api.Test;
 
 import net.named_data.jndn.Name;
+import nms.rib.Route;
+import nms.rib.RouteKey;
 
 class TestRouteKey {
 
