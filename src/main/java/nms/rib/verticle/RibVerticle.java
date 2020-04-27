@@ -54,20 +54,7 @@ public class RibVerticle extends AbstractVerticle {
 				ribService.addRoute(new Route(name, faceId, origin), new RibHandler() {
 					@Override
 					public void handleRib(Rib rib) {
-						Fib fib = rib.toFib();
-						// get the fib commands that need to be sent to the forward verticle
-						List<FibCommand> fibCommands = fib.compare(currentFib);
-						List<Future> allFutures = new ArrayList<>();
-						fibCommands.forEach(command -> {
-							allFutures.add(sendCommandToForwarderVerticle(command));
-						});
-						CompositeFuture.all(allFutures).onComplete(ar -> {
-							if (ar.succeeded()) {
-								LOG.debug("all commands were executed successfully");
-							} else {
-								LOG.debug("something went bad");
-							}
-						});
+						sendFibCommands(rib);
 					}
 				});
 			}
@@ -79,7 +66,7 @@ public class RibVerticle extends AbstractVerticle {
 				ribService.removeRoute(new Route(name, faceId, origin), new RibHandler() {
 					@Override
 					public void handleRib(Rib rib) {
-
+						sendFibCommands(rib);
 					}
 				});
 			}
@@ -87,7 +74,24 @@ public class RibVerticle extends AbstractVerticle {
 
 	}
 
-	private Future<Void> sendCommandToForwarderVerticle(FibCommand command) {
+	private void sendFibCommands(Rib rib) {
+		Fib fib = rib.toFib();
+		// get the fib commands that need to be sent to the forward verticle
+		List<FibCommand> fibCommands = fib.compare(currentFib);
+		List<Future> allFutures = new ArrayList<>();
+		fibCommands.forEach(command -> {
+			allFutures.add(sendCommandFuture(command));
+		});
+		CompositeFuture.all(allFutures).onComplete(ar -> {
+			if (ar.succeeded()) {
+				LOG.debug("all commands were executed successfully");
+			} else {
+				LOG.debug("something went bad");
+			}
+		});
+	}
+
+	private Future<Void> sendCommandFuture(FibCommand command) {
 		Promise<Void> promise = Promise.promise();
 		vertx.eventBus().request(FORWARDER_EVENTBUS_ADDRESS, command.toEventBusFormat(), ar -> {
 			if (ar.succeeded()) {
