@@ -1,293 +1,457 @@
 package nms.forwarder.verticle;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import com.github.arteam.simplejsonrpc.client.JsonRpcClient;
+import com.github.arteam.simplejsonrpc.client.builder.RequestBuilder;
+import com.github.arteam.simplejsonrpc.client.exception.JsonRpcException;
+import com.github.arteam.simplejsonrpc.core.domain.ErrorMessage;
+import com.thetransactioncompany.jsonrpc2.JSONRPC2ParseException;
+import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
+import net.minidev.json.JSONArray;
 import nms.forwarder.api.EventBusEndpoint;
-import nms.forwarder.api.RestEndpoint;
 import nms.forwarder.model.face.Face;
 import nms.forwarder.model.face.FaceData;
-import nms.forwarder.model.fib.fibErase;
-import nms.forwarder.model.fib.fibFind;
-import nms.forwarder.model.fib.fibInsert;
+import nms.forwarder.model.fib.FibEntry;
 import nms.forwarder.model.version.Version;
+import nms.forwarder.model.port.PortInfo;
 import nms.forwarder.rpc.RpcTransport;
 
 public class ForwarderVerticle extends AbstractVerticle {
 
-	Logger logger = LoggerFactory.getLogger(ForwarderVerticle.class.getName());
-	private static int PORT = 8080;
+	Logger LOG = LoggerFactory.getLogger(ForwarderVerticle.class.getName());
 	private static String EVENTBUS_ADDRESS = "fw-verticle.eventbus";
 
 	@Override
 	public void start(Promise<Void> promise) {
-
 		// setup EventBus
-		this.consumeEventBus(EVENTBUS_ADDRESS);
-
-		// setup HTTP server
-		Router router = Router.router(vertx);
-		this.registerHandlers(router);
-		this.startHttpServer(router, promise);
-
+		this.consumeEventBus(EVENTBUS_ADDRESS, promise);
 	}
 
-	private void consumeEventBus(String address) {
+	private void consumeEventBus(String address, Promise<Void> promise) {
 		vertx.eventBus().consumer(address, (message) -> {
-			JsonObject body = (JsonObject) message.body();
-			String action = body.getString("action");
+			JSONRPC2Request req = null;
+			String method = "";
+			String body = message.body().toString();
 
-			if (action == EventBusEndpoint.GET_VERSION.getName()) {
-				logger.debug("[eventbus] action = " + EventBusEndpoint.GET_VERSION.getName());
-				Version version = this.getVersion_JsonRPC();
+			try {
+				req = JSONRPC2Request.parse(body);
 
-				// send response back to requester through EventBus
-				message.replyAndRequest(version.toJsonObject(), null);
+			} catch (JSONRPC2ParseException e) {
+				System.out.println(e.getMessage());
+				return;
 			}
 
-			if (action == EventBusEndpoint.GET_FACES.getName()) {
-				logger.debug("[eventbus] action = " + EventBusEndpoint.GET_FACES.getName());
-				JsonArray array = this.getFaces_JsonRPC();
-				logger.debug("[eventbus] received " + array.size() + " faces");
-				message.replyAndRequest(array, null);
+			method = req.getMethod();
+
+			LOG.info("[eventbus] method = " + method);
+			if (method.equals(EventBusEndpoint.GET_VERSION.getName())) {
+				this.getVersioFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						message.reply(ar.result().toJsonObject());
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
+				});
 			}
 
-			if (action == EventBusEndpoint.GET_FACE.getName()) {
-				logger.debug("[eventbus] action = " + EventBusEndpoint.GET_FACE.getName());
-				int id = body.getInteger("id");
-				FaceData face = this.getFace_JsonRPC(id);
-				System.out.println("Face = " + face.toString());
+			if (method.equals(EventBusEndpoint.CREATE_FACE.getName())) {
+				this.createFaceFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						message.reply(ar.result().toJsonObject());
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
+				});
+
 			}
 
-			if (action == EventBusEndpoint.ADD_FACE.getName()) {
-				logger.debug("[eventbus] action = " + EventBusEndpoint.ADD_FACE.getName());
+			if (method.equals(EventBusEndpoint.DESTROY_FACE.getName())) {
+				this.destroyFaceFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						message.reply(new JsonObject().put("status", "success").put("message", "face with Id " + ar.result() + " was destroyed"));
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
+				});
+
+			}
+			
+			if (method.equals(EventBusEndpoint.LIST_PORTS.getName())) {
+				this.getPortsFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						List<PortInfo> portsList = ar.result();
+						JsonArray portsJson = new JsonArray();
+						portsList.forEach(port -> {
+							portsJson.add(port.toJsonObject());
+						});
+						JsonObject result = new JsonObject().put("ports", portsJson);
+						LOG.info(result.encodePrettily());
+						message.reply(result);
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
+				});
 			}
 
-			if (action == EventBusEndpoint.GET_FIB.getName()) {
-				logger.debug("[eventbus] action = " + EventBusEndpoint.GET_FIB.getName());
-				JsonArray fibAarray = this.getFibs_JsonRPC();
-				System.out.println("Face = " + fibAarray.toString());
+			if (method.equals(EventBusEndpoint.LIST_FACES.getName())) {
+				this.getFacesFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						List<Face> facesList = ar.result();
+						JsonArray facesJson = new JsonArray();
+						facesList.forEach(face -> {
+							facesJson.add(face.toJsonObject());
+						});
+						JsonObject result = new JsonObject().put("faces", facesJson);
+						LOG.info(result.encodePrettily());
+						message.reply(result);
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
+				});
+			}
+			
+			if (method.equals(EventBusEndpoint.LIST_FIB.getName())) {
+				this.getFibFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						List<String> fibList = ar.result();
+						JsonArray fibJson = new JsonArray();
+						fibList.forEach(entry -> {
+							fibJson.add(entry);
+						});
+						JsonObject result = new JsonObject().put("fib", fibJson);
+						LOG.info(result.encodePrettily());
+						message.reply(result);
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
+				});
 			}
 
-			if (action == EventBusEndpoint.GET_FIB_ENTRY.getName()) {
-				logger.debug("[eventbus] action = " + EventBusEndpoint.GET_FIB_ENTRY.getName());
-				String name = body.getString("name");
-				fibFind fib = this.getFib_JsonRPC(name);
-				System.out.println("Face = " + fib.toString());
+			if (method.equals(EventBusEndpoint.GET_FACE.getName())) {
+				this.getFaceFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						LOG.info(ar.result().toJsonObject().encodePrettily());
+						message.reply(ar.result().toJsonObject());
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
+
+				});
 			}
 
-			if (action == EventBusEndpoint.REGISTER_PREFIX.getName()) {
-				logger.debug("[eventbus] action = " + EventBusEndpoint.REGISTER_PREFIX.getName());
-				String name = body.getString("name");
+			if (method.equals(EventBusEndpoint.INSERT_FIB.getName())) {
 
-				Object[] nexthopsJson = body.getJsonArray("nexthops").getList().toArray();
-				Integer[] nexthops = Arrays.copyOf(nexthopsJson, nexthopsJson.length, Integer[].class);
+				this.insertFibFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						message.reply(new JsonObject().put("status", "success").put("message", "FIB was updated"));
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
 
-				this.insertFib_JsonRPC(name, nexthops);
-				System.out.println("Inserted " + name);
+				});
 			}
 
-			if (action == EventBusEndpoint.UNREGISTER_PREFIX.getName()) {
-				logger.debug("[eventbus] action = " + EventBusEndpoint.UNREGISTER_PREFIX.getName());
-				String name = body.getString("name");
-				fibErase fib = this.eraseFib_JsonRPC(name);
-				System.out.println("Erased " + fib.toString());
+			if (method.equals(EventBusEndpoint.ERASE_FIB.getName())) {
+				this.eraseFibFuture_JsonRPC(req).onComplete(ar -> {
+					if (ar.succeeded()) {
+						message.reply(new JsonObject().put("status", "success").put("message", "FIB was updated"));
+					} else {
+						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
+					}
+
+				});
 			}
 		});
 
+		promise.complete();
 	}
 
-	private void startHttpServer(Router router, Promise<Void> promise) {
-		vertx.createHttpServer().requestHandler(router).listen(PORT, result -> {
-			if (result.succeeded()) {
-				logger.info("HTTP server listening on port 8080");
-				promise.complete();
-			} else {
-				System.out.println(result.cause());
-				promise.fail(result.cause());
-			}
-		});
-	}
-
-	private void registerHandlers(Router router) {
-		router.route().handler(BodyHandler.create());
-		router.get(RestEndpoint.GET_VERSION.getEndpoint()).handler(this::getVersion);
-		router.get(RestEndpoint.GET_FACES.getEndpoint()).handler(this::getFaces);
-		router.get(RestEndpoint.GET_FACE.getEndpoint()).handler(this::getFace);
-		router.post(RestEndpoint.ADD_FACE.getEndpoint()).handler(this::addFace);
-		router.get("/api/fibs").handler(this::getFibs);
-		router.get("/api/fibs/:name").handler(this::getFib);
-		router.get("/api/fibs/:name").handler(this::eraseFib);
-		router.post("/api/fibs").handler(this::insertFib);
-	}
-
-	private void getVersion(RoutingContext context) {
-		HttpServerResponse response = context.response();
-		Version version = this.getVersion_JsonRPC();
-
-		response.putHeader("content-type", "application/json")
-				.end(new JsonObject().put("version", version.toJsonObject()).encodePrettily());
-	}
-
-	private Version getVersion_JsonRPC() {
+	private Future<List<PortInfo>> getPortsFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
-		Version version = client.createRequest().id("599851553").method("Version.Version").param("_", 0)
+		Promise<List<PortInfo>> promise = Promise.promise();
+		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
+				.method(req.getMethod());
+		List<PortInfo> ports = null;
+		try {
+			ports = reqBuilder.returnAsList(PortInfo.class).execute();
+			promise.complete(ports);
+		} catch (JsonRpcException e) {
+			e.printStackTrace();
+			ErrorMessage error = e.getErrorMessage();
+
+			if (error.getCode() == -32602) {
+				LOG.error("invalid parameter: " + error.getMessage());
+			}
+			promise.fail(error.getMessage());
+		} catch (IllegalStateException e) {
+			LOG.error(e.getMessage());
+		}
+		return promise.future();
+	}
+
+	private Future<List<String>> getFibFuture_JsonRPC(JSONRPC2Request req) {
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
+		Promise<List<String>> promise = Promise.promise();
+		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
+				.method(req.getMethod());
+		List<String> fib = null;
+		try {
+			fib = reqBuilder.returnAsList(String.class).execute();
+			promise.complete(fib);
+		} catch (JsonRpcException e) {
+			e.printStackTrace();
+			ErrorMessage error = e.getErrorMessage();
+
+			if (error.getCode() == -32602) {
+				LOG.error("invalid parameter: " + error.getMessage());
+			}
+			promise.fail(error.getMessage());
+		} catch (IllegalStateException e) {
+			LOG.error(e.getMessage());
+		}
+		return promise.future();
+	}
+
+	private Future<FibEntry> insertFibFuture_JsonRPC(JSONRPC2Request req) {
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
+		Promise<FibEntry> promise = Promise.promise();
+		Map<String, Object> params = req.getNamedParams();
+		List<Integer> nexthops = (ArrayList) params.get("Nexthops");
+		String name = (String) params.get("Name");
+		if (nexthops.size() != 0) {
+			try {
+				client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Name", name)
+						.param("Nexthops", nexthops).param("StrategyId", 1).returnAs(FibEntry.class).execute();
+				
+			} catch (JsonRpcException e) {
+				e.printStackTrace();
+				ErrorMessage error = e.getErrorMessage();
+
+				if (error.getCode() == -32602) {
+					LOG.error("invalid parameter: " + error.getMessage());
+				}
+				promise.fail(error.getMessage());
+			}
+		}
+		promise.complete();
+		return promise.future();
+	}
+
+	private Future<String> eraseFibFuture_JsonRPC(JSONRPC2Request req) {
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
+		Promise<String> promise = Promise.promise();
+
+		Map<String, Object> params = req.getNamedParams();
+		String name = (String) params.get("Name");
+		LOG.info("attempt to erase fib entry prefix " + name);
+		try {
+			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Name", name).execute();
+			promise.complete(name);
+		} catch (JsonRpcException e) {
+			e.printStackTrace();
+			ErrorMessage error = e.getErrorMessage();
+
+			if (error.getCode() == -32602) {
+				LOG.error("invalid parameter: " + error.getMessage());
+			}
+			promise.fail(error.getMessage());
+		}
+		return promise.future();
+	}
+
+	private Future<Integer> destroyFaceFuture_JsonRPC(JSONRPC2Request req) {
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
+		Promise<Integer> promise = Promise.promise();
+
+		Map<String, Object> params = req.getNamedParams();
+		Number faceNumber = (Number) params.get("Id");
+		int faceId = faceNumber.intValue();
+		LOG.info("attempt to destroy face with ID " + faceId);
+		try {
+			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Id", faceId).execute();
+			promise.complete(faceId);
+		} catch (JsonRpcException e) {
+			e.printStackTrace();
+			ErrorMessage error = e.getErrorMessage();
+
+			if (error.getCode() == -32602) {
+				LOG.error("invalid parameter: " + error.getMessage());
+			}
+			promise.fail(error.getMessage());
+		}
+		return promise.future();
+	}
+
+	private Version getVersion_JsonRPC(JSONRPC2Request req) {
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
+		Version version = client.createRequest().id(req.getID().toString()).method(req.getMethod()).param("_", 0)
 				.returnAs(Version.class).execute();
-		System.out.println(version.toString());
 
 		return version;
 	}
 
-	// Face.List
-	private void getFaces(RoutingContext context) {
-		HttpServerResponse response = context.response();
-		JsonArray array = this.getFaces_JsonRPC();
+	private Future<Version> getVersioFuture_JsonRPC(JSONRPC2Request req) {
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
+		Promise<Version> promise = Promise.promise();
+		Version version;
+		try {
+			version = client.createRequest().id(req.getID().toString()).method(req.getMethod()).param("_", 0)
+					.returnAs(Version.class).execute();
 
-		response.putHeader("content-type", "application/json")
-				.end(new JsonObject().put("faces", array).encodePrettily());
+			promise.complete(version);
+		} catch (JsonRpcException e) {
+//          e.printStackTrace();
+			ErrorMessage error = e.getErrorMessage();
+
+			if (error.getCode() == -32602) {
+				LOG.error("invalid parameter: " + error.getMessage());
+			}
+			promise.fail(error.getMessage());
+		}
+
+		return promise.future();
+
+	}
+
+	// Face.Create
+	private Face createFace_JsonRPC(JSONRPC2Request req) {
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
+
+		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
+		Map<String, Object> params = req.getNamedParams();
+		String local = (String) params.get("Local");
+		String port = (String) params.get("Port");
+		String remote = (String) params.get("Remote");
+		String scheme = (String) params.get("Scheme");
+		Face face = null;
+		try {
+			face = reqBuilder.param("Local", local).param("Remote", remote).param("Scheme", scheme).param("Port", port)
+					.returnAs(Face.class).execute();
+		} catch (JsonRpcException e) {
+//            e.printStackTrace();
+			ErrorMessage error = e.getErrorMessage();
+
+			if (error.getCode() == -32602) {
+				LOG.error("invalid parameter: " + error.getMessage());
+			}
+		}
+
+		return face;
+
+	}
+
+	private Future<Face> createFaceFuture_JsonRPC(JSONRPC2Request req) {
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
+
+		Promise<Face> promise = Promise.promise();
+		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
+		Map<String, Object> params = req.getNamedParams();
+//		String local = (String) params.get("Local");
+		String port = (String) params.get("Port");
+		String remote = (String) params.get("Remote");
+		String scheme = (String) params.get("Scheme");
+		Face face = null;
+		try {
+			face = reqBuilder.param("Remote", remote).param("Scheme", scheme).param("Port", port).returnAs(Face.class)
+					.execute();
+			promise.complete(face);
+		} catch (JsonRpcException e) {
+			e.printStackTrace();
+			ErrorMessage error = e.getErrorMessage();
+
+			if (error.getCode() == -32602) {
+				LOG.error("invalid parameter: " + error.getMessage());
+			}
+			promise.fail(error.getMessage());
+		}
+		return promise.future();
 	}
 
 	private JsonArray getFaces_JsonRPC() {
 		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
-		List<Face> faces = client.createRequest().id("1").method("Face.List").param("_", 0).returnAsList(Face.class)
-				.execute();
+		List<Face> faces = client.createRequest().id("1").method("Face.List").returnAsList(Face.class).execute();
 		JsonArray array = new JsonArray(faces);
 
 		return array;
 	}
 
-	// Face.Get
-	private void getFace(RoutingContext context) {
-		HttpServerResponse response = context.response();
-		int id = Integer.valueOf(context.request().getParam("id"));
-		FaceData face = this.getFace_JsonRPC(id);
-
-		response.putHeader("content-type", "application/json").end(face.toString());
-	}
-
-	private FaceData getFace_JsonRPC(int id) {
+	private Future<List<Face>> getFacesFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
-		FaceData face = client.createRequest().id("2").method("Face.Get").param("Id", id).returnAs(FaceData.class)
-				.execute();
+		Promise<List<Face>> promise = Promise.promise();
+		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
+				.method(req.getMethod());
+		List<Face> faces = null;
+		try {
+			faces = reqBuilder.returnAsList(Face.class).execute();
+			promise.complete(faces);
+		} catch (JsonRpcException e) {
+			e.printStackTrace();
+			ErrorMessage error = e.getErrorMessage();
 
-		return face;
+			if (error.getCode() == -32602) {
+				LOG.error("invalid parameter: " + error.getMessage());
+			}
+			promise.fail(error.getMessage());
+		} catch (IllegalStateException e) {
+			LOG.error(e.getMessage());
+		}
+		return promise.future();
 	}
 
-	private void addFace(RoutingContext context) {
-		JsonObject face = context.getBodyAsJson();
-		String faceId = face.getString("faceId");
-
-		HttpServerResponse response = context.response();
-		this.addFace_JsonRPC();
-		JsonObject payload = new JsonObject().put("message", "insert new face, faceId=" + faceId);
-		response.putHeader("content-type", "application/json").end(payload.encodePrettily());
-	}
-
-	private void addFace_JsonRPC() {
-		// TODO Auto-generated method stub
-
-	}
-
-	// Fib.List
-	private void getFibs(RoutingContext context) {
-		HttpServerResponse response = context.response();
-		JsonArray fibs = this.getFibs_JsonRPC();
-
-		response.putHeader("content-type", "application/json").end(new JsonObject().put("fibs", fibs).encodePrettily());
-	}
-
-	private JsonArray getFibs_JsonRPC() {
+	private Future<FaceData> getFaceFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
+		Promise<FaceData> promise = Promise.promise();
 
-		List<String> fibs = client.createRequest().id("1").method("Fib.List").param("_", 0).returnAsList(String.class)
-				.execute();
-
-		System.out.println(fibs.toString());
-		JsonArray array = new JsonArray(fibs);
-
-		return array;
-	}
-
-	// Fib.Find
-	private void getFib(RoutingContext context) {
-		String name = "/" + context.request().getParam("name");
-		HttpServerResponse response = context.response();
-		fibFind fib = this.getFib_JsonRPC(name);
-
-		response.putHeader("content-type", "application/json").end(fib.toString());
-	}
-
-	private fibFind getFib_JsonRPC(String name) {
-		RpcTransport tp = new RpcTransport();
-		JsonRpcClient client = new JsonRpcClient(tp);
-		fibFind fib = client.createRequest().id("299851553").method("Fib.Find").param("Name", name)
-				.returnAs(fibFind.class).execute();
-
-		return fib;
-	}
-
-	// Fib.Insert
-	private void insertFib(RoutingContext context) {
-		JsonObject fib = context.getBodyAsJson();
-		String name = fib.getString("name");
-		Object[] nexthopsJson = fib.getJsonArray("nexthops").getList().toArray();
-		Integer[] nexthops = Arrays.copyOf(nexthopsJson, nexthopsJson.length, Integer[].class);
-
-		HttpServerResponse response = context.response();
-		this.insertFib_JsonRPC(name, nexthops);
-		JsonObject payload = new JsonObject().put("message", "Inserted new fib with name: " + name);
-
-		response.putHeader("content-type", "application/json").end(payload.encodePrettily());
-	}
-
-	private fibInsert insertFib_JsonRPC(String name, Integer[] nexthops) {
-		RpcTransport tp = new RpcTransport();
-		JsonRpcClient client = new JsonRpcClient(tp);
-		fibInsert ins = client.createRequest().id("599851553").method("Fib.Insert").param("Name", name)
-				.param("Nexthops", nexthops).returnAs(fibInsert.class).execute();
-
-		return ins;
-	}
-
-	// Fib.Erase
-	private void eraseFib(RoutingContext context) {
-		String name = context.request().getParam("name");
-		HttpServerResponse response = context.response();
-		this.eraseFib_JsonRPC(name);
-		JsonObject payload = new JsonObject().put("message", "Erased fib with name: " + name);
-
-		response.putHeader("content-type", "application/json").end(payload.encodePrettily());
-	}
-
-	private fibErase eraseFib_JsonRPC(String name) {
-		RpcTransport tp = new RpcTransport();
-		JsonRpcClient client = new JsonRpcClient(tp);
-		fibErase er = client.createRequest().id("599851553").method("Fib.Erase").param("Name", name)
-				.returnAs(fibErase.class).execute();
-
-		return er;
+		Map<String, Object> params = req.getNamedParams();
+		Number faceNumber = (Number) params.get("Id");
+		int faceId = faceNumber.intValue();
+		LOG.info("retrieving info of face with ID " + faceId);
+		FaceData face = null;
+		try {
+			face = client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Id", faceId)
+					.returnAs(FaceData.class).execute();
+			promise.complete(face);
+		} catch (JsonRpcException e) {
+			LOG.error(e.getMessage());
+			promise.fail(e.getMessage());
+		} catch (IllegalStateException e) {
+			LOG.error(e.getMessage());
+			promise.fail(e.getMessage());
+		}
+		return promise.future();
 	}
 
 	@Override
 	public void stop() {
-//		List<Future> futures = new ArrayList<>();
-		logger.info("stopping " + this.getClass().getName());
+		LOG.info("stopping " + this.getClass().getName());
+	}
+
+	public static String getEventBusAddress() {
+		return EVENTBUS_ADDRESS;
 	}
 
 }
