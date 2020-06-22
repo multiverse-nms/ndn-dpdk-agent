@@ -2,17 +2,18 @@ package nms.forwarder.api;
 
 public enum EventBusEndpoint {
 	
-	GET_VERSION("get_version"),
-	GET_FACE("get_face"),
-	GET_FACES("get_faces"),
-	ADD_FACE("add_face"),
-	EDIT_FACE("edit_face"),
-	GET_FIB("get_fib"),
-	GET_FIB_ENTRY("get_fib"),
-	INSERT_FIB_ENTRY("insert_fib"),
-	EDIT_FIB_ENTRY("edit_fib"),
-	REGISTER_PREFIX("reg_prefix"),
-	UNREGISTER_PREFIX("unreg_prefix");
+	GET_VERSION("Version.Version"),
+	GET_FACE("Face.Get"),
+	LIST_PORTS("EthFace.ListPorts"),
+	LIST_FACES("Face.List"),
+	CREATE_FACE("Face.Create"),
+	DESTROY_FACE("Face.Destroy"),
+	ADD_ROUTE("Route.Add"),
+	REMOVE_ROUTE("Route.Remove"),
+	LIST_FIB("Fib.List"),
+	// can only be used by RIB verticle
+	INSERT_FIB("Fib.Insert"),
+	ERASE_FIB("Fib.Erase");
 	;
 	
 	private String name;
