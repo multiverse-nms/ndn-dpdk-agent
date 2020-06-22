@@ -54,6 +54,23 @@ class TestRib {
 	}
 	
 	
+	@Test
+	void testRemove() {
+		Rib rib = new Rib();
+		Route route1 = new Route(new Name("/a/b/c"), 1000, 1);
+		rib.addRoute(route1);
+		Route route2 = new Route(new Name("/a/b/d"), 1002, 0);
+		rib.addRoute(route2);
+		Route route3 = new Route(new Name("/b/c"), 1003, 0);
+		rib.addRoute(route3);
+		
+		Route routeToDelete1 = new Route(new Name("/a/b/d"), 1002, 0);
+		rib.removeRoute(routeToDelete1);
+		
+		System.out.println(rib);
+		
+	}
+	
 	
 	@Test
 	void testRibTiFib1() {
@@ -97,7 +114,7 @@ class TestRib {
 			@Override
 			public void handle(FibNode node) {
 				if (node.getName().equals(name)) {
-					assertEquals(expectedNexthops, node.getNexthops());
+					assertEquals(expectedNexthops, node.getNexthops().getMap());
 				}
 			}
 		});
@@ -144,7 +161,7 @@ class TestRib {
 			@Override
 			public void handle(FibNode node) {
 				if (node.getName().equals(nameABC)) {
-					assertEquals(expectedNexthopsABC, node.getNexthops());
+					assertEquals(expectedNexthopsABC, node.getNexthops().getMap());
 				}
 			}	
 		});
@@ -157,7 +174,7 @@ class TestRib {
 			@Override
 			public void handle(FibNode node) {
 				if (node.getName().equals(nameD)) {
-					assertEquals(expectedNexthopsD, node.getNexthops());
+					assertEquals(expectedNexthopsD, node.getNexthops().getMap());
 				}
 			}
 		});
