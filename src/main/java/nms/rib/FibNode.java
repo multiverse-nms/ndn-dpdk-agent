@@ -100,6 +100,10 @@ public class FibNode {
 	public List<Nexthop> getNexthopsList() {
 		return this.nexthops.getList();
 	}
+	
+	public Map<Integer, Integer> getNexthopsMap() {
+		return this.nexthops.getMap();
+	}
 
 	public void addNexthop(int faceId, int cost) {
 		this.nexthops.addnexthop(getName(), faceId, cost);

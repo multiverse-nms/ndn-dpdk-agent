@@ -1,7 +1,9 @@
 package nms.rib;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -10,21 +12,29 @@ import net.named_data.jndn.Name;
 public class NexthopList {
 
 	private List<Nexthop> nexthops;
+	private Map<Integer, Integer> nexthopsMap;
 
 	public NexthopList() {
 		this.nexthops = new ArrayList<>();
+		this.nexthopsMap = new HashMap<>();
 	}
 
 	public List<Nexthop> getList() {
 		return nexthops;
 	}
+	
+	public Map<Integer, Integer> getMap() {
+		return nexthopsMap;
+	}
 
 	public void addnexthop(Name name, int faceId, int cost) {
 		this.nexthops.add(new Nexthop(name, faceId, cost));
+		this.nexthopsMap.put(faceId, cost);
 	}
 
 	public void removeNexthop(Name name, int faceId, int cost) {
 		this.nexthops.remove(new Nexthop(name, faceId, cost));
+		this.nexthopsMap.remove(faceId);
 	}
 
 	public int size() {
