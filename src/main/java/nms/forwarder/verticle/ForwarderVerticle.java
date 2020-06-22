@@ -3,7 +3,6 @@ package nms.forwarder.verticle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import com.github.arteam.simplejsonrpc.client.JsonRpcClient;
 import com.github.arteam.simplejsonrpc.client.builder.RequestBuilder;
@@ -19,7 +18,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import net.minidev.json.JSONArray;
 import nms.forwarder.api.EventBusEndpoint;
 import nms.forwarder.model.face.Face;
 import nms.forwarder.model.face.FaceData;
@@ -261,7 +259,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 		String name = (String) params.get("Name");
 		LOG.info("attempt to erase fib entry prefix " + name);
 		try {
-			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Name", name).execute();
+			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Name", name).returnAs(Void.class).execute();
 			promise.complete(name);
 		} catch (JsonRpcException e) {
 			e.printStackTrace();
