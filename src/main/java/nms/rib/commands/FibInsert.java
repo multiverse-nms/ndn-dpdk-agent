@@ -1,7 +1,15 @@
 package nms.rib.commands;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
+
 import io.vertx.core.json.JsonObject;
 import net.named_data.jndn.Name;
+import nms.forwarder.api.EventBusEndpoint;
 import nms.rib.NexthopList;
 
 public class FibInsert implements FibCommand {
@@ -23,7 +31,7 @@ public class FibInsert implements FibCommand {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("INSERT: ");
+		sb.append("INSERT ");
 		sb.append("name: ").append(name);
 		sb.append(", nexthops:").append(nexthops);
 		return sb.toString();
@@ -32,9 +40,29 @@ public class FibInsert implements FibCommand {
 	@Override
 	public JsonObject toEventBusFormat() {
 		JsonObject json = new JsonObject();
+		json.put("method", "Fib.Insert");
 		json.put("name", name.toUri());
 		json.put("nexthops", nexthops.toJsonArray());
 		return json;
 	}
+
+	@Override
+	public JsonObject toJsonRpcRequest() {
+		String method = EventBusEndpoint.INSERT_FIB.getName();
+		String id = UUID.randomUUID().toString();
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("Name", name.toString());
+		// problem when library tries to serialize prefix in nexthop
+		ArrayList<Integer> nexthopsList = new ArrayList<>();
+		nexthops.getList().forEach(nh -> {
+			nexthopsList.add(nh.getFaceId());
+		});
+		params.put("Nexthops", nexthopsList);
+		JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
+		String jsonString = reqOut.toString();
+		return new JsonObject(jsonString);
+	}
+	
+	
 
 }

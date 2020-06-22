@@ -90,7 +90,7 @@ public class Route {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(" { faceId: ").append(this.faceId).append(", cost: ").append(this.cost).append(" }");
+		sb.append(" { Prefix: ").append(this.prefix).append(", FaceId: ").append(this.faceId).append(", Origin: ").append(this.origin).append(", Cost: ").append(this.cost).append(" }");
 		return sb.toString();
 	}
 }

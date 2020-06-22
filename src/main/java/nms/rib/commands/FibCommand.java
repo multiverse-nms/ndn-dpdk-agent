@@ -6,4 +6,6 @@ public interface FibCommand {
 	public void execute();
 	
 	public JsonObject toEventBusFormat();
+	
+	public JsonObject toJsonRpcRequest();
 }
