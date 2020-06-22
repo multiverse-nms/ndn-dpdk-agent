@@ -32,7 +32,6 @@
         "method",
         "params"
     ],
-    "additionalProperties": true,
     "properties": {
         "method": {
             "$id": "#/properties/method",
@@ -58,7 +57,6 @@
                 "Port",
                 "Remote"
             ],
-            "additionalProperties": true,
             "properties": {
                 "Local": {
                     "$id": "#/properties/params/properties/Local",
