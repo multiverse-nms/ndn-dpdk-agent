@@ -4,7 +4,6 @@
       "version":"1.0.0",
       "title":"NMS Agent API",
       "description":"API that describes the different operations supported by the NMS Agent.",
-      "termsOfService":"",
       "contact":{
          "name":"",
          "email":"",
