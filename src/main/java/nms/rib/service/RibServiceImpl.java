@@ -35,8 +35,9 @@ public class RibServiceImpl implements RibService {
 	public Future<Rib> addRoute(Route route) {
 		LOG.info("addeRoute(" + route + ")");
 		Promise<Rib> promise = Promise.promise();
-		Rib newRib = rib.addRoute(route);
-		promise.complete(newRib);
+		rib = rib.addRoute(route);
+		LOG.info("new rib " + rib);
+		promise.complete(rib);
 		return promise.future();
 	}
 
@@ -44,9 +45,9 @@ public class RibServiceImpl implements RibService {
 	public Future<Rib> removeRoute(Route route) {
 		LOG.info("removeRoute(" + route + ")");
 		Promise<Rib> promise = Promise.promise();
-		Rib newRib = rib.removeRoute(route);
-		LOG.info("newRib " + newRib);
-		promise.complete(newRib);
+		rib = rib.removeRoute(route);
+		LOG.info("new rib " + rib);
+		promise.complete(rib);
 		return promise.future();
 	}
 

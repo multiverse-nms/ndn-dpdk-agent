@@ -35,9 +35,11 @@ public class Fib {
 
 	}
 
-	public List<FibCommand> compare(Fib fib) {
+	
+	
+	public List<FibCommand> compare(Fib oldFib) {
 		List<FibCommand> commands = new ArrayList<>();
-		this.root.diff(new Name(""), fib.getRoot() , commands);
+		this.root.diff(new Name(""), oldFib.getRoot() , commands);
 		return commands;	
 	}
 	

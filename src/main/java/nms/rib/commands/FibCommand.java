@@ -8,4 +8,6 @@ public interface FibCommand {
 	public JsonObject toEventBusFormat();
 	
 	public JsonObject toJsonRpcRequest();
+	
+	public boolean hasNexthops();
 }

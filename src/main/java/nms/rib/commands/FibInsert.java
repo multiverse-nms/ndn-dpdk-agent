@@ -41,8 +41,8 @@ public class FibInsert implements FibCommand {
 	public JsonObject toEventBusFormat() {
 		JsonObject json = new JsonObject();
 		json.put("method", "Fib.Insert");
-		json.put("name", name.toUri());
-		json.put("nexthops", nexthops.toJsonArray());
+		json.put("Name", name.toUri());
+		json.put("Nexthops", nexthops.toJsonArray());
 		return json;
 	}
 
@@ -58,11 +58,16 @@ public class FibInsert implements FibCommand {
 			nexthopsList.add(nh.getFaceId());
 		});
 		params.put("Nexthops", nexthopsList);
+		params.put("StrategyId", 1);
 		JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
 		String jsonString = reqOut.toString();
 		return new JsonObject(jsonString);
 	}
 	
+	@Override
+	public boolean hasNexthops() {
+		return nexthops.size() != 0;
+	}
 	
 
 }

@@ -100,7 +100,7 @@ public class FibNode {
 	public List<Nexthop> getNexthopsList() {
 		return this.nexthops.getList();
 	}
-	
+
 	public Map<Integer, Integer> getNexthopsMap() {
 		return this.nexthops.getMap();
 	}
@@ -131,13 +131,23 @@ public class FibNode {
 			child.diff(this.getName().append(comp), prevChildren.getOrDefault(comp, null), commands);
 			prevChildrenComponents.remove(comp);
 		}
-		
-		for (Component comp: prevChildrenComponents) {
-			commands.add(new FibErase(name.append(comp)));
+
+		for (Component comp : prevChildrenComponents) {
+			prevChildren.get(comp).eraseSubtree(name.append(comp), commands);
+		}
+	}
+
+	private void eraseSubtree(Name name, List<FibCommand> commands) {
+		if (this.nexthops.size() > 0) {
+			commands.add(new FibErase(name, this.nexthops));
 		}
 
+		for (Map.Entry<Component, FibNode> entry : this.children.entrySet()) {
+			Component comp = entry.getKey();
+			FibNode child = entry.getValue();
+			child.eraseSubtree(name.append(comp), commands);
+		}
 	}
-	
 
 	@Override
 	public boolean equals(Object o) {
@@ -152,7 +162,6 @@ public class FibNode {
 			return false;
 
 		FibNode node = (FibNode) o;
-
 		return node.getName().equals(this.getName()) && node.getNexthops().equals(this.getNexthops());
 	}
 

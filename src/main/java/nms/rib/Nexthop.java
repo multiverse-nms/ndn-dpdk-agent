@@ -40,6 +40,8 @@ public class Nexthop implements Comparable<Nexthop> {
 		this.cost = cost;
 	}
 
+	
+	
 	@Override
 	public boolean equals(Object o) {
 		// self check
@@ -54,6 +56,7 @@ public class Nexthop implements Comparable<Nexthop> {
 
 		Nexthop hop = (Nexthop) o;
 
+		// why compare only prefix and faceId
 		return this.prefix.equals(hop.getPrefix()) && this.faceId == hop.getFaceId();
 	}
 
@@ -68,7 +71,7 @@ public class Nexthop implements Comparable<Nexthop> {
 
 	@Override
 	public int compareTo(Nexthop nexthop) {
-		return this.getCost() < nexthop.getCost() ? 1 : this.getCost() > nexthop.getCost() ? -1 : 0;
+		return this.getCost() - nexthop.getCost();
 	}
 	
 	public JsonObject toJsonObject() {

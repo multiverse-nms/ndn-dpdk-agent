@@ -9,13 +9,16 @@ import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
 import io.vertx.core.json.JsonObject;
 import net.named_data.jndn.Name;
 import nms.forwarder.api.EventBusEndpoint;
+import nms.rib.NexthopList;
 
 public class FibErase implements FibCommand {
 
 	private Name name;
+	private NexthopList nexthops;
 
-	public FibErase(Name name) {
+	public FibErase(Name name, NexthopList nexthops) {
 		this.name = name;
+		this.nexthops = nexthops;
 	}
 
 	@Override
@@ -33,7 +36,7 @@ public class FibErase implements FibCommand {
 	public JsonObject toEventBusFormat() {
 		JsonObject json = new JsonObject();
 		json.put("method", "Fib.Erase");
-		json.put("name", name.toUri());
+		json.put("Name", name.toUri());
 		return json;
 	}
 
@@ -46,6 +49,11 @@ public class FibErase implements FibCommand {
 		JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
 		String jsonString = reqOut.toString();
 		return new JsonObject(jsonString);
+	}
+
+	@Override
+	public boolean hasNexthops() {
+		return nexthops.size() != 0;
 	}
 
 

@@ -61,57 +61,51 @@ public class RibVerticle extends AbstractVerticle {
 			LOG.info("[eventbus] method = " + method);
 
 			Map<String, Object> params = req.getNamedParams();
-			
+
 			if (method.equals(EventBusEndpoint.ADD_ROUTE.getName())) {
-				Name prefix = new Name( (String) params.get("Prefix"));
+				Name prefix = new Name((String) params.get("Prefix"));
 				Number faceNumber = (Number) params.get("FaceId");
 				int faceId = faceNumber.intValue();
 				Number originNumber = (Number) params.get("Origin");
 				int origin = originNumber.intValue();
-				LOG.info("Prefix: " + prefix.toUri() + ", FaceId: " + faceId + ", Origin: " +  origin );
-				
-				
-				ribService.addRoute(new Route(prefix, faceId, origin)).onComplete(ar -> {
+				Number costNumber = (Number) params.get("Cost");
+				int cost = costNumber.intValue();
+				LOG.info("Prefix: " + prefix.toUri() + ", FaceId: " + faceId + ", Origin: " + origin + ", Cost: "
+						+ cost);
+
+				Route route = new Route(prefix, faceId, origin);
+				route.setCost(cost);
+				ribService.addRoute(route).onComplete(ar -> {
 					sendFibCommands(ar.result()).onComplete(ar1 -> {
 						if (ar1.succeeded()) {
 							message.reply(new JsonObject().put("status", "success").put("message", "FIB updated"));
 						} else {
-							message.reply(new JsonObject().put("status", "error").put("message", "something went wrong"));
+							message.reply(
+									new JsonObject().put("status", "error").put("message", "something went wrong"));
 						}
 					});
 				});
-//				ribService.addRoute(new Route(name, faceId, origin), new RibHandler() {
-//					@Override
-//					public void handleRib(Rib rib) {
-//						sendFibCommands(rib);
-//					}
-//				});
 			}
 
 			if (method.equals(EventBusEndpoint.REMOVE_ROUTE.getName())) {
-				Name name = new Name( (String) params.get("Prefix"));
+				Name name = new Name((String) params.get("Prefix"));
 				Number faceNumber = (Number) params.get("FaceId");
 				int faceId = faceNumber.intValue();
 				Number originNumber = (Number) params.get("Origin");
 				int origin = originNumber.intValue();
-				
+
 				ribService.removeRoute(new Route(name, faceId, origin)).onComplete(ar -> {
 					sendFibCommands(ar.result()).onComplete(ar1 -> {
 						if (ar1.succeeded()) {
 							message.reply(new JsonObject().put("status", "success").put("message", "FIB updated"));
 						} else {
-							message.reply(new JsonObject().put("status", "error").put("message", "something went wrong"));
+							message.reply(
+									new JsonObject().put("status", "error").put("message", "something went wrong"));
 						}
 					});
 				});
-//				ribService.removeRoute(new Route(name, faceId, origin), new RibHandler() {
-//					@Override
-//					public void handleRib(Rib rib) {
-//						sendFibCommands(rib);
-//					}
-//				});
 			}
-		});	
+		});
 		promise.complete();
 	}
 
@@ -120,9 +114,14 @@ public class RibVerticle extends AbstractVerticle {
 		Fib fib = rib.toFib();
 		// get the fib commands that need to be sent to the forward verticle
 		List<FibCommand> fibCommands = fib.compare(currentFib);
+		currentFib = fib;
 		List<Future> allFutures = new ArrayList<>();
 		fibCommands.forEach(command -> {
-			allFutures.add(sendCommandFuture(command));
+			if (command.hasNexthops()) {
+				System.out.println("COMMAND: " + command);
+				allFutures.add(sendCommandFuture(command));
+			}
+
 		});
 		CompositeFuture.all(allFutures).onComplete(ar -> {
 			if (ar.succeeded()) {

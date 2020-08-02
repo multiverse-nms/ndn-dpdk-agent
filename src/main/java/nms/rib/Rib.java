@@ -126,6 +126,17 @@ public class Rib {
 		return sb.toString();
 	}
 
+	public String toTreeView() {
+		StringBuilder sb = new StringBuilder();
+		traverse(this.root, new RibNodeHandler() {
+			@Override
+			public void handle(RibNode node) {
+				sb.append(node).append("\n");
+			}
+		});
+		return sb.toString();
+	}
+
 	public void insertRoutes(List<Route> routes) {
 		routes.forEach(route -> {
 			this.findOrInsertRoute(route);
@@ -135,36 +146,69 @@ public class Rib {
 	public static void main(String[] args) {
 		Rib rib = new Rib();
 
-		Route routeA1 = new Route(new Name("/a"), 1, 0);
+		Route routeA1 = new Route(new Name("/a/b"), 1200, 0);
 		routeA1.setCost(10);
-		routeA1.setChildInheritFlag(false);
+//		routeA1.setChildInheritFlag(false);
 
-		Route routeA2 = new Route(new Name("/a"), 1, 1);
+		Route routeA2 = new Route(new Name("/a/b"), 1300, 0);
 		routeA2.setCost(20);
 
-		Route routeA3 = new Route(new Name("/a"), 2, 0);
-		routeA3.setCost(30);
-		routeA3.setChildInheritFlag(false);
-
-		Route routeAB1 = new Route(new Name("/a/b"), 1, 0);
-		routeAB1.setCost(40);
-
-		Route routeAB2 = new Route(new Name("/a/b"), 2, 0);
-		routeAB2.setCost(50);
-
-		Route routeABC = new Route(new Name("/a/b/c"), 3, 0);
-		routeABC.setCost(60);
-
-		Route routeABCD = new Route(new Name("/a/b/c/d"), 4, 0);
-		routeABCD.setCost(70);
-		routeABCD.setCaptureFlag(true);
-
+		Route routeA3 = new Route(new Name("/a/b"), 1400, 0);
+		routeA3.setCost(15);
+		
 		List<Route> routes = new ArrayList<>();
-		routes.addAll(Arrays.asList(routeA1, routeA2, routeA3, routeAB1, routeAB2, routeABC, routeABCD));
-
+//		routes.addAll(Arrays.asList(routeA1, routeA2, routeA3, routeAB1, routeAB2, routeABC, routeABCD));
+		routes.addAll(Arrays.asList(routeA1, routeA2, routeA3));
 		rib.insertRoutes(routes);
 		
-		System.out.println("RIB:\n" + rib);
-		System.out.println("FIB:\n" + rib.toFib());
+		
+		
+		rib.removeRoute(new Route(new Name("/a/b"), 1400, 0));
+		rib.removeRoute(new Route(new Name("/a/b"), 1200, 0));
+		System.out.println("RIB before 1300 removal:\n" + rib);
+		Fib fib1 = rib.toFib();
+		System.out.println("FIB before 1300 removal:\n" + fib1);
+		
+		rib.removeRoute(new Route(new Name("/a/b"), 1300, 0));
+		System.out.println("RIB after 1300 removal:\n" + rib);
+		System.out.println("FIb after 1300 removal:\n" + rib.toFib());
+		Fib fib2 = rib.toFib();
+		
+		System.out.println("FIB DIFF\n:" + fib2.compare(fib1));
+		
+		
+//		routeA3.setChildInheritFlag(false);
+
+//		Route routeAB1 = new Route(new Name("/a/b"), 1, 0);
+//		routeAB1.setCost(40);
+//
+//		Route routeAB2 = new Route(new Name("/a/b"), 2, 0);
+//		routeAB2.setCost(50);
+//
+//		Route routeABC = new Route(new Name("/a/b/c"), 3, 0);
+//		routeABC.setCost(60);
+//
+//		Route routeABCD = new Route(new Name("/a/b/c/d"), 4, 0);
+//		routeABCD.setCost(70);
+//		routeABCD.setCaptureFlag(true);
+
+//		List<Route> routes = new ArrayList<>();
+////		routes.addAll(Arrays.asList(routeA1, routeA2, routeA3, routeAB1, routeAB2, routeABC, routeABCD));
+//		routes.addAll(Arrays.asList(routeA1, routeA2, routeA3));
+//		rib.insertRoutes(routes);
+
+//		System.out.println("RIB:\n" + rib);
+////		System.out.println("RIB:\n" + rib.toTreeView());
+//		System.out.println("FIB:\n" + rib.toFib());
+//		
+//		rib.removeRoute(new Route(new Name("/a/b"), 2, 0));
+//		rib.removeRoute(new Route(new Name("/a"), 2, 0));
+//		
+//		System.out.println("NEW RIB:\n" + rib);
+//		System.out.println("NEW FIB:\n" + rib.toFib());
+		
+		
+		
+		
 	}
 }
