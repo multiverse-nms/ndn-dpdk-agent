@@ -35,7 +35,7 @@
  
  To run the agent use the following command, where `<target>` is the path to your .jar file that was generated during the `mvn package` step.
  
- `java -jar <taget>`
+ `java -jar <target>`
 
  
  
