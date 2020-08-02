@@ -25,6 +25,10 @@ public class Main extends AbstractVerticle {
 
 	@Override
 	public void start(Promise<Void> promise) throws Exception {
+		deployAllVerticles(promise);
+	}
+
+	private void deployAllVerticles(Promise<Void> promise) {
 		DeploymentOptions ribVerticleOptions = new DeploymentOptions().setConfig(config());
 		DeploymentOptions fwVerticleOptions = new DeploymentOptions().setConfig(config());
 		DeploymentOptions wsVerticleOptions = new DeploymentOptions().setConfig(config());
