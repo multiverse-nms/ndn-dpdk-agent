@@ -297,15 +297,6 @@ public class ForwarderVerticle extends AbstractVerticle {
 		return promise.future();
 	}
 
-	private Version getVersion_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport();
-		JsonRpcClient client = new JsonRpcClient(tp);
-		Version version = client.createRequest().id(req.getID().toString()).method(req.getMethod()).param("_", 0)
-				.returnAs(Version.class).execute();
-
-		return version;
-	}
-
 	private Future<Version> getVersioFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
@@ -330,33 +321,6 @@ public class ForwarderVerticle extends AbstractVerticle {
 
 	}
 
-	// Face.Create
-	private Face createFace_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport();
-		JsonRpcClient client = new JsonRpcClient(tp);
-
-		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
-		Map<String, Object> params = req.getNamedParams();
-		String local = (String) params.get("Local");
-		String port = (String) params.get("Port");
-		String remote = (String) params.get("Remote");
-		String scheme = (String) params.get("Scheme");
-		Face face = null;
-		try {
-			face = reqBuilder.param("Local", local).param("Remote", remote).param("Scheme", scheme).param("Port", port)
-					.returnAs(Face.class).execute();
-		} catch (JsonRpcException e) {
-//            e.printStackTrace();
-			ErrorMessage error = e.getErrorMessage();
-
-			if (error.getCode() == -32602) {
-				LOG.error("invalid parameter: " + error.getMessage());
-			}
-		}
-
-		return face;
-
-	}
 
 	private Future<Face> createFaceFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
@@ -386,14 +350,6 @@ public class ForwarderVerticle extends AbstractVerticle {
 		return promise.future();
 	}
 
-	private JsonArray getFaces_JsonRPC() {
-		RpcTransport tp = new RpcTransport();
-		JsonRpcClient client = new JsonRpcClient(tp);
-		List<Face> faces = client.createRequest().id("1").method("Face.List").returnAsList(Face.class).execute();
-		JsonArray array = new JsonArray(faces);
-
-		return array;
-	}
 
 	private Future<List<Face>> getFacesFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
