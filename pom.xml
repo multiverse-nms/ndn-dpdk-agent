@@ -9,7 +9,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<vertx.version>3.9.0</vertx.version>
-		<verticle.main>nms.MainVerticle2</verticle.main>
+		<verticle.main>nms.Main</verticle.main>
 	</properties>
 
 	<dependencies>
