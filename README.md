@@ -16,7 +16,7 @@
 
 #### What you’ll need
  
-- JDK 9 or later
+- JDK 8 or later
 - Install Maven
 
 #### Build the Agent
