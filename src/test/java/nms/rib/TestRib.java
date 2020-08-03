@@ -68,7 +68,6 @@ class TestRib {
 		rib.removeRoute(routeToDelete1);
 		
 		System.out.println(rib);
-		
 	}
 	
 	
@@ -177,8 +176,7 @@ class TestRib {
 					assertEquals(expectedNexthopsD, node.getNexthops().getMap());
 				}
 			}
-		});
-				
+		});			
 	}
 
 }
