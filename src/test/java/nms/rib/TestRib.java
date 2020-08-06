@@ -71,6 +71,29 @@ class TestRib {
 	}
 	
 	
+	
+	@Test
+	void testRemoveCase2() {
+		Rib rib = new Rib();
+		Route route1 = new Route(new Name("/a/b"), 1001, 10);
+		rib.addRoute(route1);
+		Route route2 = new Route(new Name("/a/b"), 1002, 20);
+		rib.addRoute(route2);
+		Route route3 = new Route(new Name("/a/b"), 1003, 15);
+		rib.addRoute(route3);
+		
+		Route routeToDelete1 = new Route(new Name("/a/b"), 1003, 15);
+		rib.removeRoute(routeToDelete1);
+		Route routeToDelete2 = new Route(new Name("/a/b"), 1002, 20);
+		rib.removeRoute(routeToDelete2);
+		Route routeToDelete3 = new Route(new Name("/a/b"), 1001, 10);
+		rib.removeRoute(routeToDelete3);
+		
+		System.out.println("RIB:\n" + rib);
+	}
+	
+	
+	
 	@Test
 	void testRibTiFib1() {
 		Rib rib = new Rib();
