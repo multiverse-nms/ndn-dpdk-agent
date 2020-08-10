@@ -1,0 +1,79 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "https://gist.github.com/elmiomar/fa749e154698aa4b177e4091fe88db60",
+	"title": "Agent Configuration",
+	"description": "Configuration of an NMS Agent",
+	"type": "object",
+	"properties": {
+		"faces": {
+			"description": "The list of faces",
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/face"
+			}
+		},
+		"routes": {
+			"description": "The list of routes",
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/route"
+			}
+		}
+	},
+	"required": ["faces", "routes"],
+	"definitions": {
+		"face": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "number",
+					"description": "The ID assigned by the controller to the face."
+				},
+				"local": {
+					"type": "string",
+					"description": "The local address of the face."
+				},
+				"remote": {
+					"type": "string",
+					"description": "The remote address of the face."
+				},
+				"scheme": {
+					"type": "string",
+					"description": "The underlying protocol."
+				}
+			},
+			"required": ["id", "local", "remote", "scheme"]
+		},
+		"route": {
+			"type": "object",
+			"properties": {
+				"prefix": {
+					"type": "string",
+					"contentEncoding": "base64",
+					"description": "The prefix of the route."
+				},
+				"faceId": {
+					"type": "number",
+					"description": "The ID of the face associated with this route."
+				},
+				"origin": {
+					"type": "number",
+					"description": "The origin of the route."
+				},
+				"cost": {
+					"type": "number",
+					"description": "The cost of the route."
+				},
+				"childInherit": {
+					"type": "boolean",
+					"description": "Child Inherit flag."
+				},
+				"capture": {
+					"type": "boolean",
+					"description": "Capture flag."
+				}
+			},
+			"required": ["prefix", "faceId", "origin", "cost"]
+		}
+	}
+}
