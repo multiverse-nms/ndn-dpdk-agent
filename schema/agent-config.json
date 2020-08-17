@@ -26,7 +26,7 @@
 			"type": "object",
 			"properties": {
 				"id": {
-					"type": "number",
+					"type": "integer",
 					"description": "The ID assigned by the controller to the face."
 				},
 				"local": {
@@ -40,6 +40,13 @@
 				"scheme": {
 					"type": "string",
 					"description": "The underlying protocol."
+				},
+				"vlan": {
+					"type": "integer",
+					"description": "The VLAN tag the face belongs to.",
+					"minimum": 1,
+  					"maximum": 4095,
+					"default": 1
 				}
 			},
 			"required": ["id", "local", "remote", "scheme"]
@@ -50,27 +57,31 @@
 				"prefix": {
 					"type": "string",
 					"contentEncoding": "base64",
-					"description": "The prefix of the route."
+					"description": "The prefix of the route. This represents the Name TLV-VALUE."
 				},
 				"faceId": {
-					"type": "number",
+					"type": "integer",
 					"description": "The ID of the face associated with this route."
 				},
 				"origin": {
-					"type": "number",
-					"description": "The origin of the route."
+					"type": "integer",
+					"description": "The origin of the route.",
+					"minimum": 1,
+  					"maximum": 4095
 				},
 				"cost": {
-					"type": "number",
+					"type": "integer",
 					"description": "The cost of the route."
 				},
 				"childInherit": {
 					"type": "boolean",
-					"description": "Child Inherit flag."
+					"description": "Child Inherit flag.",
+					"default": true
 				},
 				"capture": {
 					"type": "boolean",
-					"description": "Capture flag."
+					"description": "Capture flag.",
+					"default": false
 				}
 			},
 			"required": ["prefix", "faceId", "origin", "cost"]
