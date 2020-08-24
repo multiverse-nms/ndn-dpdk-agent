@@ -1,0 +1,21 @@
+{
+  "faces": [
+    {
+      "id": 1101,
+      "local": "a.a.a.a",
+      "remote": "b.b.b.b",
+      "scheme": "eth",
+      "vlan": 1
+    }
+  ],
+  "routes": [
+    {
+      "prefix": "/a/b/c",
+      "faceId": 1101,
+      "origin": 0,
+      "cost": 10,
+      "childInherit": true,
+      "capture": false
+    }
+  ]
+}
