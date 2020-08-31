@@ -71,22 +71,44 @@ public class RestClientImpl implements RestClient {
 	@Override
 	public Future<Void> sendNotification(Notification notification) {
 		Promise<Void> promise = Promise.promise();
-		String endpoint = "";
 		switch (notification.getType()) {
 		case STATUS:
-			endpoint = NOTIFICATION_STATUS_ENDPOINT;
+			webClient
+			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_STATUS_ENDPOINT)
+			.sendJsonObject(notification.toJsonObject(),ar -> {
+				if(ar.succeeded()) {
+					System.out.println("Status notification with status code" + ar.result().statusCode());
+				}else {
+					promise.fail(" Failed STATUS notification");
+				}
+			  });
+			
 			break;
 		case EVENT:
-			endpoint = NOTIFICATION_EVENT_ENDPOINT;
+			webClient
+			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_EVENT_ENDPOINT)
+			.sendJsonObject(notification.toJsonObject(),ar -> {
+				if(ar.succeeded()) {
+					System.out.println("Event notification with status code" + ar.result().statusCode());
+				}else {
+					promise.fail("Failed EVENT notification");
+				}
+			  });
 			break;
 		case FAULT:
-			endpoint = NOTIFICATION_FAULT_ENDPOINT;
+			webClient
+			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_FAULT_ENDPOINT)
+			.sendJsonObject(notification.toJsonObject(),ar -> {
+				if(ar.succeeded()) {
+					System.out.println("Fault notification with status code" + ar.result().statusCode());
+				}else {
+					promise.fail("Failed FAULT notification");
+				}
+			  });
 			break;
 		}
 
-		// TODO: add logic to send notification here
-		// this should be a post request
-		// look at: https://vertx.io/docs/vertx-web-client/java/#_writing_request_bodies
+		
 		return promise.future();
 	}
 
