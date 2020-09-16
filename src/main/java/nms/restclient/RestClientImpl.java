@@ -35,10 +35,11 @@ public class RestClientImpl implements RestClient {
 	}
 
 	@Override
-	public Future<Configuration> getCandidateConfiguration() {
+	public Future<Configuration> getCandidateConfiguration(String token) {
 		Promise<Configuration> promise = Promise.promise();
 		webClient
 		.get(entryPoint.getPort(), entryPoint.getHost(), CANDIDATE_CONFIG_ENDPOINT)
+		.bearerTokenAuthentication(token)
 		.send(ar -> {
 			if (ar.succeeded()) {
 				HttpResponse<Buffer> response = ar.result();
@@ -52,10 +53,11 @@ public class RestClientImpl implements RestClient {
 	}
 
 	@Override
-	public Future<Configuration> getRunningConfiguration() {
+	public Future<Configuration> getRunningConfiguration(String token) {
 		Promise<Configuration> promise = Promise.promise();
 		webClient
 		.get(entryPoint.getPort(), entryPoint.getHost(), RUNNING_CONFIG_ENDPOINT)
+		.bearerTokenAuthentication(token)
 		.send(ar -> {
 			if (ar.succeeded()) {
 				HttpResponse<Buffer> response = ar.result();

@@ -4,9 +4,9 @@ import io.vertx.core.Future;
 
 public interface RestClient {
 	
-	public Future<Configuration> getCandidateConfiguration();
+	public Future<Configuration> getCandidateConfiguration(String token);
 	
-	public Future<Configuration> getRunningConfiguration();
+	public Future<Configuration> getRunningConfiguration(String token);
 	
 	public Future<Void> sendNotification(Notification notification);
 	
