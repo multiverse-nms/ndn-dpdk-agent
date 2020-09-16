@@ -1,5 +1,9 @@
 package nms.restclient;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.UUID;
+
 import io.vertx.core.json.JsonObject;
 
 public class StatusNotification implements Notification {
@@ -8,6 +12,12 @@ public class StatusNotification implements Notification {
 	private String timestamp;
 	private Status status;
 
+	public StatusNotification(Status status) {
+		this.id = UUID.randomUUID().toString();
+		this.timestamp = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+		this.status = status;
+	}
+	
 	@Override
 	public String getId() {
 		// TODO Auto-generated method stub
