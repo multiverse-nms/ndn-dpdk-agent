@@ -25,6 +25,8 @@ import io.vertx.junit5.VertxTestContext;
 public class ClientTest {
 
 	private StubServer server;
+	
+	private String dummyToken = "qwertyuiopasdfghjklzxcvbnm123456";
 
 	@BeforeEach
 	public void start() {
@@ -41,7 +43,7 @@ public class ClientTest {
 		whenHttp(server).match(get("/configuration/candidate-config")).then(resourceContent("exampleConfiguration.json"));
 
 		EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");
-		new RestClientImpl(vertx, entryPoint).getCandidateConfiguration().onComplete(ar -> {
+		new RestClientImpl(vertx, entryPoint).getCandidateConfiguration(dummyToken).onComplete(ar -> {
 			if (ar.failed()) {
 				testContext.failNow(ar.cause());
 			} else {
