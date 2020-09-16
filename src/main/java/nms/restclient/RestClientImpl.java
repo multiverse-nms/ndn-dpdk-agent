@@ -71,12 +71,13 @@ public class RestClientImpl implements RestClient {
 	}
 
 	@Override
-	public Future<Void> sendNotification(Notification notification) {
+	public Future<Void> sendNotification(Notification notification, String token) {
 		Promise<Void> promise = Promise.promise();
 		switch (notification.getType()) {
 		case STATUS:
 			webClient
 			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_STATUS_ENDPOINT)
+			.bearerTokenAuthentication(token)
 			.sendJsonObject(notification.toJsonObject(),ar -> {
 				if(ar.succeeded()) {
 					System.out.println("Status notification with status code" + ar.result().statusCode());
@@ -89,6 +90,7 @@ public class RestClientImpl implements RestClient {
 		case EVENT:
 			webClient
 			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_EVENT_ENDPOINT)
+			.bearerTokenAuthentication(token)
 			.sendJsonObject(notification.toJsonObject(),ar -> {
 				if(ar.succeeded()) {
 					System.out.println("Event notification with status code" + ar.result().statusCode());
@@ -100,6 +102,7 @@ public class RestClientImpl implements RestClient {
 		case FAULT:
 			webClient
 			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_FAULT_ENDPOINT)
+			.bearerTokenAuthentication(token)
 			.sendJsonObject(notification.toJsonObject(),ar -> {
 				if(ar.succeeded()) {
 					System.out.println("Fault notification with status code" + ar.result().statusCode());

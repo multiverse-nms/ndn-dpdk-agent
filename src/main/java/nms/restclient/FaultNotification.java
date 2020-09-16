@@ -11,7 +11,8 @@ public class FaultNotification implements Notification {
 	
 	
 	public FaultNotification() {
-		
+		this.id = UUID.randomUUID().toString();
+		this.timestamp = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
 	}
 	
 	@Override

@@ -75,4 +75,68 @@ public class ClientTest {
 		});
 	}
 
+
+	@Test
+	public void testSendStatusNotification(Vertx vertx, VertxTestContext testContext) throws Exception {
+		
+	   	StatusNotification StatusNotification = new StatusNotification(Status.UP);
+	   	
+	   	
+	    whenHttp(server).match(put("/notification/status")).then(status(HttpStatus.OK_200));
+	 
+		 EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");	
+         new RestClientImpl(vertx,entryPoint).sendNotification(StatusNotification,dummyToken).onComplete(ar -> {
+        	 if(ar.failed()) {
+        		 testContext.failNow(ar.cause());
+        	 }
+        	 else {
+        		 testContext.completeNow();
+        	 }
+         });
+		
+	}
+	
+	@Test
+	public void testSendFaultNotification(Vertx vertx, VertxTestContext testContext) throws Exception {
+		
+		FaultNotification FaultNotification = new FaultNotification();
+	   	FaultNotification.setCode(0);
+	   	FaultNotification.setMessage("string");
+	   
+	    whenHttp(server).match(put("/notification/fault")).then(status(HttpStatus.OK_200));
+	 
+		 EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");	
+         new RestClientImpl(vertx,entryPoint).sendNotification(FaultNotification,dummyToken).onComplete(ar -> {
+        	 if(ar.failed()) {
+        		 testContext.failNow(ar.cause());
+        	 }
+        	 else {
+        		 testContext.completeNow();
+        	 }
+         });
+		
+	}
+	
+	@Test
+	public void testSendEventNotification(Vertx vertx, VertxTestContext testContext) throws Exception {
+		
+		EventNotification EventNotification = new EventNotification();
+		EventNotification.setCode(0);
+		EventNotification.setMessage("string");
+		EventNotification.setSeverity(Severity.LOW);
+		EventNotification.setTimestamp("2020-09-16T15:06:40.892Z");
+	    whenHttp(server).match(put("/notification/fault")).then(status(HttpStatus.OK_200));
+	 
+		 EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");	
+         new RestClientImpl(vertx,entryPoint).sendNotification(EventNotification,dummyToken).onComplete(ar -> {
+        	 if(ar.failed()) {
+        		 testContext.failNow(ar.cause());
+        	 }
+        	 else {
+        		 testContext.completeNow();
+        	 }
+         });		
+	}
+
+
 }

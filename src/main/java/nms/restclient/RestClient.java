@@ -8,7 +8,7 @@ public interface RestClient {
 	
 	public Future<Configuration> getRunningConfiguration(String token);
 	
-	public Future<Void> sendNotification(Notification notification);
+	public Future<Void> sendNotification(Notification notification, String token);
 	
 	public Future<String> basicAuthentication(String user, String password);
 
