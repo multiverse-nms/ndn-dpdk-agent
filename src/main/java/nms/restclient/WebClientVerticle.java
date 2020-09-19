@@ -13,10 +13,23 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.web.client.WebClient;
+import nms.restclient.service.AuthenticationService;
+import nms.restclient.service.ConfigurationService;
+import nms.restclient.service.NotificationService;
+import nms.restclient.service.TokenManager;
+import nms.restclient.service.impl.ConfigurationServiceImpl;
+import nms.restclient.service.impl.Login;
+import nms.restclient.service.impl.NotificationServiceImpl;
+import nms.restclient.service.impl.TokenManagerImpl;
 
 public class WebClientVerticle extends AbstractVerticle {
 
-	private RestClient restClient;
+	private WebClient webClient;
+	
+	private TokenManager tokenManager;
+	private ConfigurationService configService;
+	private NotificationService notifService;
 
 	private static final Logger LOG = LoggerFactory.getLogger(WebClientVerticle.class);
 	private static String WEBCLIENT_EVENTBUS_ADDRESS = "webclient-verticle.eventbus";
@@ -26,32 +39,21 @@ public class WebClientVerticle extends AbstractVerticle {
 	private static long STATUS_PERIOD = 60000;
 	boolean isNewConfig = true;
 	
-	private String token;
+	private AuthToken authToken;
 
 	@Override
-	public void start(Promise<Void> promise) {
-
+	public void start(Promise<Void> promise) throws Exception {
+		super.start(promise);
 		LOG.info("starting " + this.getClass().getName());
-		EntryPoint localhostEntryPoint = new EntryPoint(9001, "localhost");
-		this.restClient = new RestClientImpl(vertx, localhostEntryPoint);
-		
-		Properties prop = new Properties();
-
-		try {
-			prop.load(new FileInputStream("data.properties"));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		String username = prop.getProperty("username");
-		String password = prop.getProperty("password");
-		
-		
-		// login
-		this.login(username, password).onComplete(ar -> {
+		this.webClient = WebClient.create(vertx);
+		EntryPoint localEntryPoint = new EntryPoint(9001, "localhost");
+//		TokenManagerImpl(webClient, localEntryPoint);
+		this.login().onComplete(ar -> {
 			if (ar.succeeded()) {
-				token = ar.result();
+				authToken = ar.result();
+				this.notifService = new NotificationServiceImpl(webClient, localEntryPoint, authToken);
+				this.configService = new ConfigurationServiceImpl(webClient, localEntryPoint, authToken);
+				
 				// send status periodically 
 				this.sendStatus(new StatusNotification(Status.UP), new Handler<AsyncResult<Void>>() {
 					@Override
@@ -64,43 +66,33 @@ public class WebClientVerticle extends AbstractVerticle {
 
 					}
 				});
-				
-				
 				// retrieve config periodically
 				this.pollConfiguration(new Handler<AsyncResult<Configuration>>() {
 					@Override
 					public void handle(AsyncResult<Configuration> ar) {
 						if (ar.succeeded()) {
-							if (isNewConfig) {
-								// apply to forwarder
-								applyConfiguration(ar.result());
-							} else {
-								compareConfiguration(null, ar.result());
-							}
-							isNewConfig = false;
+							
+						} else {
+							
 						}
-
 					}
 				});
-				
 			} else {
 				LOG.error("could not authenticate this agent");
 			}
 		});
-		
-		
 	}
 
 	private void sendStatus(StatusNotification status, Handler<AsyncResult<Void>> handler) {
-		vertx.setPeriodic(STATUS_PERIOD, id -> this.restClient.sendNotification(status).onComplete(handler));
+		vertx.setPeriodic(STATUS_PERIOD, id -> this.notifService.sendNotification(status).onComplete(handler));
 	}
 
-	private Future<String> login(String user, String password) {
-		return this.restClient.basicAuthentication(user, password);
+	private Future<AuthToken> login() {
+		return this.tokenManager.getNewToken();
 	}
 
 	private void pollConfiguration(Handler<AsyncResult<Configuration>> handler) {
-		vertx.setPeriodic(CONFIG_PERIOD, id -> this.restClient.getCandidateConfiguration(token).onComplete(handler));
+		vertx.setPeriodic(CONFIG_PERIOD, id -> this.configService.getCandidateConfiguration().onComplete(handler));
 	}
 
 	private void applyConfiguration(Configuration config) {
