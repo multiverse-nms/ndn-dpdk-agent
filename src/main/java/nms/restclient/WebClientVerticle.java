@@ -84,7 +84,11 @@ public class WebClientVerticle extends AbstractVerticle {
 	}
 
 	private void sendStatus(StatusNotification status, Handler<AsyncResult<Void>> handler) {
+<<<<<<< HEAD
 		vertx.setPeriodic(STATUS_PERIOD, id -> this.notifService.sendNotification(status).onComplete(handler));
+=======
+		vertx.setPeriodic(STATUS_PERIOD, id -> this.restClient.sendNotification(status,token).onComplete(handler));
+>>>>>>> 9eaaa331549eceb1dda81782ce00a7e5e4372da8
 	}
 
 	private Future<AuthToken> login() {
