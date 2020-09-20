@@ -2,6 +2,7 @@ package nms.restclient.service.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import nms.restclient.AuthToken;
 import nms.restclient.EntryPoint;
@@ -18,6 +19,7 @@ public class NotificationServiceImpl implements NotificationService {
 	private static String NOTIFICATION_EVENT_ENDPOINT = "/notification/event";
 	private static String NOTIFICATION_FAULT_ENDPOINT = "/notification/fault";
 	
+	private static long STATUS_PERIOD = 60000;
 	
 	public NotificationServiceImpl(WebClient webClient, EntryPoint entryPoint, AuthToken token) {
 
@@ -66,11 +68,11 @@ public class NotificationServiceImpl implements NotificationService {
 		
 		return promise.future();
 	}
-
 	
 	@Override
-	public void refreshToken(String token) {
-		this.authToken = new AuthToken(token);
+	public Future<Void> sendNotificationPeriodically(Notification notification, Vertx vertx) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
