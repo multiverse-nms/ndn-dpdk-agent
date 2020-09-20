@@ -35,8 +35,6 @@ public class WebClientVerticle extends AbstractVerticle {
 	private static String WEBCLIENT_EVENTBUS_ADDRESS = "webclient-verticle.eventbus";
 	private static String FORWARDER_EVENTBUS_ADDRESS = "fw-verticle.eventbus";
 	private static String RIB_EVENTBUS_ADDRESS = "rib-verticle.eventbus";
-	private static long CONFIG_PERIOD = 60000; // delay the delay in milliseconds, after which the timer will fire
-	private static long STATUS_PERIOD = 60000;
 	boolean isNewConfig = true;
 	
 	private AuthToken authToken;
@@ -52,52 +50,16 @@ public class WebClientVerticle extends AbstractVerticle {
 			if (ar.succeeded()) {
 				authToken = ar.result();
 				this.notifService = new NotificationServiceImpl(webClient, localEntryPoint, authToken);
-				this.configService = new ConfigurationServiceImpl(webClient, localEntryPoint, authToken);
-				
-				// send status periodically 
-				this.sendStatus(new StatusNotification(Status.UP), new Handler<AsyncResult<Void>>() {
-					@Override
-					public void handle(AsyncResult<Void> ar) {
-						if (ar.succeeded()) {
-							
-						} else {
-							
-						}
-
-					}
-				});
-				// retrieve config periodically
-				this.pollConfiguration(new Handler<AsyncResult<Configuration>>() {
-					@Override
-					public void handle(AsyncResult<Configuration> ar) {
-						if (ar.succeeded()) {
-							
-						} else {
-							
-						}
-					}
-				});
-			} else {
-				LOG.error("could not authenticate this agent");
+				this.configService = new ConfigurationServiceImpl(webClient, localEntryPoint);
 			}
 		});
 	}
 
-	private void sendStatus(StatusNotification status, Handler<AsyncResult<Void>> handler) {
-<<<<<<< HEAD
-		vertx.setPeriodic(STATUS_PERIOD, id -> this.notifService.sendNotification(status).onComplete(handler));
-=======
-		vertx.setPeriodic(STATUS_PERIOD, id -> this.restClient.sendNotification(status,token).onComplete(handler));
->>>>>>> 9eaaa331549eceb1dda81782ce00a7e5e4372da8
-	}
 
 	private Future<AuthToken> login() {
 		return this.tokenManager.getNewToken();
 	}
 
-	private void pollConfiguration(Handler<AsyncResult<Configuration>> handler) {
-		vertx.setPeriodic(CONFIG_PERIOD, id -> this.configService.getCandidateConfiguration().onComplete(handler));
-	}
 
 	private void applyConfiguration(Configuration config) {
 		config.getFaces().forEach(face -> {
