@@ -18,9 +18,6 @@ public class RestClientImpl implements RestClient {
 
 	private static String CANDIDATE_CONFIG_ENDPOINT = "/configuration/candidate-config";
 	private static String RUNNING_CONFIG_ENDPOINT = "/configuration/running-config";
-	private static String NOTIFICATION_STATUS_ENDPOINT = "/notification/status";
-	private static String NOTIFICATION_EVENT_ENDPOINT = "/notification/event";
-	private static String NOTIFICATION_FAULT_ENDPOINT = "/notification/fault";
 	private static String LOGIN_ENDPOINT = "/login/agent";
 	
 	private String token;
@@ -70,8 +67,8 @@ public class RestClientImpl implements RestClient {
 		return promise.future();
 	}
 
-	@Override
-	public Future<Void> sendNotification(Notification notification, String token) {
+	/*@Override
+	public Future<Void> sendNotification(Notification notification) {
 		Promise<Void> promise = Promise.promise();
 		switch (notification.getType()) {
 		case STATUS:
@@ -116,7 +113,7 @@ public class RestClientImpl implements RestClient {
 		
 		return promise.future();
 	}
-
+     */
 	@Override
 	public Future<String> basicAuthentication(String user, String password) {
 		Promise<String> promise = Promise.promise();
@@ -150,6 +147,12 @@ public class RestClientImpl implements RestClient {
 	 */
 	public void setToken(String token) {
 		this.token = token;
+	}
+
+	@Override
+	public Future<Void> sendNotification(Notification notification, String token) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

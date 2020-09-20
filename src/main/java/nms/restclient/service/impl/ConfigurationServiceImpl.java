@@ -24,7 +24,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	private CredentialsProvider credsProvider;
 
 	private static String CANDIDATE_CONFIG_ENDPOINT = "/configuration/candidate-config";
-//	private static String RUNNING_CONFIG_ENDPOINT = "/configuration/running-config";
+	private static String RUNNING_CONFIG_ENDPOINT = "/configuration/running-config";
 	private static long CONFIG_PERIOD = 60000; // delay the delay in milliseconds, after which the timer will fire
 
 	public ConfigurationServiceImpl(WebClient webClient, EntryPoint entryPoint) {
@@ -68,6 +68,36 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		});
 		return promise.future();
 	}
+	@Override
+	public Future<Void> sendRunningConfiguration(Configuration runningConfiguration) {
+		Promise<Void> promise = Promise.promise();
+		HttpRequest<Buffer> request = webClient.put(entryPoint.getPort(), entryPoint.getHost(), RUNNING_CONFIG_ENDPOINT );
+		authorize(request);
+		request
+		.sendJsonObject(runningConfiguration.toJsonObject(),ar ->  {
+			if(ar.succeeded()) {
+				HttpResponse<Buffer> response = ar.result();
+				if(response.statusCode() == 200) {
+					promise.complete();
+				} else {
+				  if (response.statusCode() == 401) {
+					  refreshTokenAndRetry(request).onComplete(ar1 -> {
+							if (ar1.succeeded()) {
+								promise.complete();
+							}
+						});
+				  }
+				  if(response.statusCode() == 400) {
+					  promise.fail("Incorrect Config object.");
+				  }
+				}
+		   } else {
+				promise.fail("Failed to send the Config ");
+			}
+		  });
+		
+		return promise.future();
+	}
 
 	@Override
 	public void getConfigurationPeriodically(Vertx vertx, Handler<AsyncResult<Configuration>> handler) {
@@ -95,7 +125,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 
 	private void updateCurrentConfig(Configuration config) {
-		this.runningConfiguration = config;
+		this.setRunningConfiguration(config);
 	}
 
 	private void authorize(HttpRequest<Buffer> request) {
@@ -103,5 +133,16 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		// a new token;
 		request.bearerTokenAuthentication(token);
 	}
+
+	public Configuration getRunningConfiguration() {
+		return runningConfiguration;
+	}
+
+	public void setRunningConfiguration(Configuration runningConfiguration) {
+		this.runningConfiguration = runningConfiguration;
+	}
+	
+	
+	
 
 }

@@ -1,5 +1,9 @@
 package nms.restclient;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.UUID;
+
 import io.vertx.core.json.JsonObject;
 
 public class EventNotification implements Notification {
