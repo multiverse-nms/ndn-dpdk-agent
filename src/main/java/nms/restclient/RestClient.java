@@ -1,15 +1,18 @@
 package nms.restclient;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 
 public interface RestClient {
-	
-	public Future<Configuration> getCandidateConfiguration(String token);
-	
-	public Future<Configuration> getRunningConfiguration(String token);
-	
-	public Future<Void> sendNotification(Notification notification, String token);
-	
-	public Future<String> basicAuthentication(String user, String password);
+
+	public Future<Configuration> getConfiguration();
+
+
+	public Future<String> login(String user, String password);
+
+	public void setToken(String token);
+
+	public Future<Void> sendStatus();
 
 }

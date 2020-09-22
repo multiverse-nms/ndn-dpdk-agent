@@ -2,157 +2,107 @@ package nms.restclient;
 
 import com.google.gson.Gson;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.codec.BodyCodec;
+import io.vertx.ext.web.client.WebClientOptions;
 
 public class RestClientImpl implements RestClient {
 
-	private EntryPoint entryPoint;
 	private WebClient webClient;
+	private static int PORT = 8787;
+	private static String HOST = "mnms.controller";
+	private static final Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
+	private String token = "";
 
-	private static String CANDIDATE_CONFIG_ENDPOINT = "/configuration/candidate-config";
-	private static String RUNNING_CONFIG_ENDPOINT = "/configuration/running-config";
-	private static String LOGIN_ENDPOINT = "/login/agent";
-	
-	private String token;
-
-	public RestClientImpl(Vertx vertx, final EntryPoint entryPoint) {
-		this.webClient = WebClient.create(vertx);
-		this.entryPoint = entryPoint;
-	}
-
-	public RestClientImpl(EntryPoint entryPoint) {
-		this.entryPoint = entryPoint;
+	public RestClientImpl(Vertx vertx) {
+		WebClientOptions options = new WebClientOptions();
+		options.setSsl(true);
+		options.setPemTrustOptions(new PemTrustOptions().addCertPath("mnms-rootCA.crt.pem"));
+		this.webClient = WebClient.create(vertx, options);
 	}
 
 	@Override
-	public Future<Configuration> getCandidateConfiguration(String token) {
-		Promise<Configuration> promise = Promise.promise();
-		webClient
-		.get(entryPoint.getPort(), entryPoint.getHost(), CANDIDATE_CONFIG_ENDPOINT)
-		.bearerTokenAuthentication(token)
-		.send(ar -> {
-			if (ar.succeeded()) {
-				HttpResponse<Buffer> response = ar.result();
-				Configuration config = new Gson().fromJson(response.bodyAsString(), Configuration.class);
-				promise.complete(config);
-			} else {
-				promise.fail("could not retrieve candidate configuration");
-			}
-		});
-		return promise.future();
-	}
-
-	@Override
-	public Future<Configuration> getRunningConfiguration(String token) {
-		Promise<Configuration> promise = Promise.promise();
-		webClient
-		.get(entryPoint.getPort(), entryPoint.getHost(), RUNNING_CONFIG_ENDPOINT)
-		.bearerTokenAuthentication(token)
-		.send(ar -> {
-			if (ar.succeeded()) {
-				HttpResponse<Buffer> response = ar.result();
-				Configuration config = new Gson().fromJson(response.bodyAsString(), Configuration.class);
-				promise.complete(config);
-			} else {
-				promise.fail("could not retrieve running configuration");
-			}
-		});
-		return promise.future();
-	}
-
-	/*@Override
-	public Future<Void> sendNotification(Notification notification) {
-		Promise<Void> promise = Promise.promise();
-		switch (notification.getType()) {
-		case STATUS:
-			webClient
-			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_STATUS_ENDPOINT)
-			.bearerTokenAuthentication(token)
-			.sendJsonObject(notification.toJsonObject(),ar -> {
-				if(ar.succeeded()) {
-					System.out.println("Status notification with status code" + ar.result().statusCode());
-				}else {
-					promise.fail(" Failed STATUS notification");
-				}
-			  });
-			
-			break;
-		case EVENT:
-			webClient
-			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_EVENT_ENDPOINT)
-			.bearerTokenAuthentication(token)
-			.sendJsonObject(notification.toJsonObject(),ar -> {
-				if(ar.succeeded()) {
-					System.out.println("Event notification with status code" + ar.result().statusCode());
-				}else {
-					promise.fail("Failed EVENT notification");
-				}
-			  });
-			break;
-		case FAULT:
-			webClient
-			.put(entryPoint.getPort(), entryPoint.getHost(), NOTIFICATION_FAULT_ENDPOINT)
-			.bearerTokenAuthentication(token)
-			.sendJsonObject(notification.toJsonObject(),ar -> {
-				if(ar.succeeded()) {
-					System.out.println("Fault notification with status code" + ar.result().statusCode());
-				}else {
-					promise.fail("Failed FAULT notification");
-				}
-			  });
-			break;
-		}
-
-		
-		return promise.future();
-	}
-     */
-	@Override
-	public Future<String> basicAuthentication(String user, String password) {
+	public Future<String> login(String user, String password) {
 		Promise<String> promise = Promise.promise();
-		webClient
-		.post(entryPoint.getPort(), entryPoint.getHost(), LOGIN_ENDPOINT)
-		.as(BodyCodec.jsonObject()) // response will be decoded as JsonObject
-		.sendJsonObject(new JsonObject()
-				.put("username", user)
-				.put("password", password), ar -> {
+		RequestBuilder rb = new RequestBuilder(this.webClient, this.token).setPort(PORT).setHost(HOST);
+		rb.makeAgentLoginRequest().sendJsonObject(new JsonObject().put("username", user).put("password", password),
+				ar -> {
 					if (ar.succeeded()) {
-						HttpResponse<JsonObject> response = ar.result();
-						String token = response.body().getString("token");
-						this.setToken(token);
-						promise.complete(token);
+						HttpResponse<Buffer> response = ar.result();
+						if (response.statusCode() == 200) {
+							JsonObject body = response.bodyAsJsonObject();
+							String token = body.getString("token");
+							promise.complete(token);
+						} else {
+							if (response.statusCode() == 401) {
+								LOG.info("error: 401 - unauthorized");
+								promise.fail("error: 401 - unauthorized");
+							}
+						}
 					} else {
-						promise.fail("unable to login");
+						promise.fail("error: unable to login, " + ar.cause());
 					}
 				});
 		return promise.future();
 	}
 
-	/**
-	 * @return the token
-	 */
-	public String getToken() {
-		return token;
+	@Override
+	public Future<Configuration> getConfiguration() {
+		Promise<Configuration> promise = Promise.promise();
+		RequestBuilder rb = new RequestBuilder(this.webClient, this.token).setPort(PORT).setHost(HOST);
+		rb.makeGetConfigurationRequest().send(ar -> {
+					if (ar.succeeded()) {
+						HttpResponse<Buffer> response = ar.result();
+						if (response.statusCode() == 200) {
+							Configuration config = new Configuration(response.bodyAsJsonObject());
+//							Configuration config = new Gson().fromJson(response.bodyAsString(), Configuration.class);
+							promise.complete(config);
+						} else {
+							if (response.statusCode() == 401) {
+								LOG.info("error: 401 - unauthorized");
+								promise.fail("error: 401 - unauthorized");
+							}
+						}
+					} else {
+						promise.fail("error: unable to login, " + ar.cause());
+					}
+				});
+		return promise.future();
 	}
 
-	/**
-	 * @param token the token to set
-	 */
+
+	@Override
 	public void setToken(String token) {
 		this.token = token;
 	}
 
 	@Override
-	public Future<Void> sendNotification(Notification notification, String token) {
-		// TODO Auto-generated method stub
-		return null;
+	public Future<Void> sendStatus() {
+		Promise<Void> promise = Promise.promise();
+		StatusNotification status = new StatusNotification(Status.UP);
+		LOG.info("sending status: " + status.toJsonObject());
+		String apiEndpoint = "/api/notification/status/" + status.getId();
+		HttpRequest<Buffer> request = this.webClient.put(PORT, HOST, apiEndpoint)
+				.putHeader("Authorization", "Bearer " + this.token);
+		request.sendJsonObject(status.toJsonObject(), ar-> {
+			if (ar.succeeded()) {
+				promise.complete();
+			} else {
+				promise.fail(ar.cause());
+			}
+		});
+		return promise.future();
 	}
 
 }
