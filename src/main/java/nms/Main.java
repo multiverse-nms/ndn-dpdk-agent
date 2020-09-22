@@ -7,9 +7,13 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import nms.forwarder.verticle.ForwarderVerticle;
+import nms.restclient.WebClientVerticle;
 import nms.rib.verticle.RibVerticle;
 import nms.websockets.WebSocketServerVerticle;
 
@@ -19,6 +23,9 @@ public class Main extends AbstractVerticle {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+//		Vertx vertx = Vertx.vertx(new VertxOptions()
+//		.setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("192.168.1.205 mnms.controller"))));
+		
 		Vertx vertx = Vertx.vertx();
 		vertx.deployVerticle(new Main());
 	}
@@ -32,10 +39,12 @@ public class Main extends AbstractVerticle {
 		DeploymentOptions ribVerticleOptions = new DeploymentOptions().setConfig(config());
 		DeploymentOptions fwVerticleOptions = new DeploymentOptions().setConfig(config());
 		DeploymentOptions wsVerticleOptions = new DeploymentOptions().setConfig(config());
-
+		DeploymentOptions webClientVerticleOptions = new DeploymentOptions().setConfig(config());
+		
 		this.deployVerticle(ForwarderVerticle.class.getName(), fwVerticleOptions)
 				.compose(v -> deployVerticle(RibVerticle.class.getName(), ribVerticleOptions))
 				.compose(v -> deployVerticle(WebSocketServerVerticle.class.getName(), wsVerticleOptions))
+				.compose(v -> deployVerticle(WebClientVerticle.class.getName(), webClientVerticleOptions))
 				.onComplete(ar -> {
 					if (ar.succeeded()) {
 						LOG.info("all verticles were deployed successfully!");
