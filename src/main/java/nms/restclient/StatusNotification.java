@@ -1,5 +1,6 @@
 package nms.restclient;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -13,9 +14,17 @@ public class StatusNotification implements Notification {
 	private Status status;
 
 	public StatusNotification(Status status) {
-		this.id = UUID.randomUUID().toString();
-		this.timestamp = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+		this.id = newId();
+		this.timestamp = now();
 		this.status = status;
+	}
+
+	private String newId() {
+		return UUID.randomUUID().toString().replace("-", "");
+	}
+	
+	private String now() {
+		return new Timestamp(System.currentTimeMillis()).toInstant().toString();
 	}
 	
 	@Override
@@ -66,10 +75,7 @@ public class StatusNotification implements Notification {
 
 	@Override
 	public JsonObject toJsonObject() {
-		return new JsonObject()
-				.put("id", id)
-				.put("timestamp", timestamp)
-				.put("status", status.getStatus());
+		return new JsonObject().put("timestamp", timestamp).put("status", status.getStatus());
 	}
 
 }
