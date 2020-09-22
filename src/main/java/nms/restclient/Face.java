@@ -1,5 +1,7 @@
 package nms.restclient;
 
+import io.vertx.core.json.JsonObject;
+
 public class Face {
 
 	private int id;
@@ -20,6 +22,16 @@ public class Face {
 		this.setRemote(remote);
 		this.setScheme(scheme);
 		this.setVlan(vlan);
+	}
+
+	public Face(JsonObject json) {
+		this.id = json.getInteger("id");
+		this.local = json.getString("local");
+		this.remote = json.getString("remote");
+		this.scheme = json.getString("scheme");
+		// port and vlan don't appear in api spec
+//		this.port = json.getString("port");
+//		this.vlan = json.getInteger("vlan");
 	}
 
 	public int getId() {
@@ -97,5 +109,6 @@ public class Face {
 	public void setPort(String port) {
 		this.port = port;
 	}
-
+	
+	
 }

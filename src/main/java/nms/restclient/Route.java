@@ -1,5 +1,7 @@
 package nms.restclient;
 
+import io.vertx.core.json.JsonObject;
+
 public class Route {
 	
 	private String prefix;
@@ -16,6 +18,12 @@ public class Route {
 		this.setCost(cost);
 		this.setChildInherit(childInherit);
 		this.setCapture(capture);
+	}
+	public Route(JsonObject json) {
+		this.prefix = json.getString("prefix");
+		this.faceId = json.getInteger("faceId");
+		this.origin = json.getInteger("origin");
+		this.cost = json.getInteger("cost");
 	}
 	/**
 	 * @return the prefix
@@ -88,7 +96,6 @@ public class Route {
 	 */
 	public void setCapture(boolean capture) {
 		this.capture = capture;
-	}
-	
+	}	
 	
 }
