@@ -1,8 +1,8 @@
 package nms.restclient.service.impl;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 public class CredentialsProvider {
@@ -15,9 +15,9 @@ public class CredentialsProvider {
 
 	public void loadCredentials(String filename) {
 		Properties prop = new Properties();
-
+		InputStream propertiesInputStream = getClass().getClassLoader().getResourceAsStream(filename);
 		try {
-			prop.load(new FileInputStream(filename));
+			prop.load(propertiesInputStream);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
