@@ -1,8 +1,7 @@
 package nms.restclient.service.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -21,7 +20,6 @@ import nms.restclient.EntryPoint;
 import nms.restclient.Face;
 import nms.restclient.Route;
 import nms.restclient.service.ConfigurationService;
-import java.util.*;
 
 public class ConfigurationServiceImpl implements ConfigurationService {
 
@@ -55,7 +53,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			if (ar.succeeded()) {
 				HttpResponse<Buffer> response = ar.result();
 				if (response.statusCode() == 200) {
-					Configuration config = new Gson().fromJson(response.bodyAsString(), Configuration.class);
+					Configuration candidate = new Gson().fromJson(response.bodyAsString(), Configuration.class);
+					Configuration config =  compare(runningConfiguration,candidate);
 					updateCurrentConfig(config);
 					promise.complete(config);
 				} else {
@@ -151,10 +150,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 	
 	
-	public void compare(Configuration prev, Configuration current){
-		
+	public Configuration compare(Configuration running, Configuration current){
+		   
         List<Face> currentfaces = new ArrayList<>(current.getFaces());
-        List<Face> prevfaces = new ArrayList<>(prev.getFaces());
+        List<Face> prevfaces = new ArrayList<>(running.getFaces());
         
         if(currentfaces.equals(prevfaces)) {
         	prevfaces.retainAll(currentfaces);
@@ -169,8 +168,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
              });
         }
         
+        running.setFaces(prevfaces);
+
+        
         List<Route> currentroutes = new ArrayList<>(current.getRoutes());
-        List<Route> prevroutes = new ArrayList<>(prev.getRoutes()); 
+        List<Route> prevroutes = new ArrayList<>(running.getRoutes()); 
         
             
         if(currentroutes.equals(prevroutes)) {
@@ -185,30 +187,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         		prevroutes.add(s);
              });
         }
-        
-        
-		/*prev.getFaces().forEach(face -> {
-			current.getFaces().forEach(face1 -> {
-				if(face.getId() == face1.getId()) {
-					current.getFaces().remove(face.getId());
-				}
-				else {
-					current.getFaces().add(face);
-				}
-			});
-		});
-		
-		prev.getRoutes().forEach(route -> {
-			current.getRoutes().forEach(route1 -> {
-				if(route.equals(route1)) {
-					current.getRoutes().remove(route);
-				}
-				else {
-					current.getRoutes().add(route);
-				}
-			});
-		});*/			
-	}
+          running.setRoutes(prevroutes);
+          
+		return running ;
+       		
+	  }
 	
 
 }
