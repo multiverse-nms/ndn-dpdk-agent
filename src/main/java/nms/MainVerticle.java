@@ -42,7 +42,7 @@ public class MainVerticle extends AbstractVerticle {
 			LOG.error("unable to resolve hosts {}", e.getMessage());
 		}
 		Vertx vertx = Vertx.vertx(new VertxOptions()
-				.setAddressResolverOptions(new AddressResolverOptions().setHostsValue(buffer)));
+				.setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("192.168.1.208 mnms.controller"))));
 		vertx.deployVerticle(new MainVerticle());
 	}
 
