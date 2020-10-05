@@ -1,5 +1,9 @@
 package nms.restclient.service.impl;
 
+import java.util.ArrayList;
+
+import java.util.List;
+
 import com.google.gson.Gson;
 
 import io.vertx.core.AsyncResult;
@@ -13,6 +17,8 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import nms.restclient.Configuration;
 import nms.restclient.EntryPoint;
+import nms.restclient.Face;
+import nms.restclient.Route;
 import nms.restclient.service.ConfigurationService;
 
 public class ConfigurationServiceImpl implements ConfigurationService {
@@ -47,7 +53,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			if (ar.succeeded()) {
 				HttpResponse<Buffer> response = ar.result();
 				if (response.statusCode() == 200) {
-					Configuration config = new Gson().fromJson(response.bodyAsString(), Configuration.class);
+					Configuration candidate = new Gson().fromJson(response.bodyAsString(), Configuration.class);
+					Configuration config =  compare(runningConfiguration,candidate);
 					updateCurrentConfig(config);
 					promise.complete(config);
 				} else {
@@ -143,6 +150,48 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 	
 	
+	public Configuration compare(Configuration running, Configuration current){
+		   
+        List<Face> currentfaces = new ArrayList<>(current.getFaces());
+        List<Face> prevfaces = new ArrayList<>(running.getFaces());
+        
+        if(currentfaces.equals(prevfaces)) {
+        	prevfaces.retainAll(currentfaces);
+        }
+        else {
+        	
+        	prevfaces.retainAll(currentfaces);
+        	currentfaces.removeAll(prevfaces);
+        	
+        	currentfaces.forEach(s ->{
+        		prevfaces.add(s);
+             });
+        }
+        
+        running.setFaces(prevfaces);
+
+        
+        List<Route> currentroutes = new ArrayList<>(current.getRoutes());
+        List<Route> prevroutes = new ArrayList<>(running.getRoutes()); 
+        
+            
+        if(currentroutes.equals(prevroutes)) {
+        	prevroutes.retainAll(currentroutes);
+        }
+        else {
+        	
+        	prevroutes.retainAll(currentroutes);
+        	currentroutes.removeAll(prevroutes);
+        	
+        	currentroutes.forEach(s ->{
+        		prevroutes.add(s);
+             });
+        }
+          running.setRoutes(prevroutes);
+          
+		return running ;
+       		
+	  }
 	
 
 }
