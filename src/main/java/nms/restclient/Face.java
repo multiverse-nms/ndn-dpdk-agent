@@ -1,8 +1,10 @@
 package nms.restclient;
 
+import java.util.Objects;
+
 import io.vertx.core.json.JsonObject;
 
-public class Face {
+public class Face{
 
 	private int id;
 	private String port;
@@ -109,6 +111,8 @@ public class Face {
 	public void setPort(String port) {
 		this.port = port;
 	}
-	
-	
+	 
+	public boolean equals(Object obj) {
+		return Objects.equals(id, ((Face) obj).id);
+	}
 }

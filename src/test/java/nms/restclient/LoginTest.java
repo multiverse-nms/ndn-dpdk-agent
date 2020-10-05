@@ -46,7 +46,7 @@ public class LoginTest {
 		whenHttp(server).match(post("/login/agent"), withPostBodyContaining("\"username\":\"omar\",\"password\":\"omar@1234\"")).then(resourceContent("token.json"));
 		
 		EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");
-		new RestClientImpl(vertx, entryPoint).basicAuthentication(user, pass).onComplete(ar -> {
+		new RestClientImpl(vertx).login(user, pass).onComplete(ar -> {
 			if (ar.failed()) {
 				testContext.failNow(ar.cause());
 			} else {
@@ -54,7 +54,7 @@ public class LoginTest {
 				testContext.verify(() -> assertThat(token, is(dummyToken)));
 				testContext.completeNow();
 			}
-		});
+		}); 
 	}
 
 

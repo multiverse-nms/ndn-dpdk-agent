@@ -1,5 +1,8 @@
 package nms.restclient;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gson.Gson;
 
 import io.vertx.core.AsyncResult;
@@ -104,5 +107,53 @@ public class RestClientImpl implements RestClient {
 		});
 		return promise.future();
 	}
+	
+	@Override
+	public  Future<Configuration> compare(Configuration running, Configuration current){
+		
+		Promise<Configuration> promise = Promise.promise();
+        Configuration config = new Configuration ();
+
+		List<Face> currentfaces = new ArrayList<>(current.getFaces());
+        List<Face> prevfaces = new ArrayList<>(running.getFaces());
+        
+        if(currentfaces.equals(prevfaces)) {
+        	prevfaces.retainAll(currentfaces);
+        }
+        else {
+        	
+        	prevfaces.retainAll(currentfaces);
+        	currentfaces.removeAll(prevfaces);
+        	
+        	currentfaces.forEach(s ->{
+        		prevfaces.add(s);
+             });
+        }
+        
+        List<Route> currentroutes = new ArrayList<>(current.getRoutes());
+        List<Route> prevroutes = new ArrayList<>(running.getRoutes()); 
+        
+            
+        if(currentroutes.equals(prevroutes)) {
+        	prevroutes.retainAll(currentroutes);
+        }
+        else {
+        	
+        	prevroutes.retainAll(currentroutes);
+        	currentroutes.removeAll(prevroutes);
+        	
+        	currentroutes.forEach(s ->{
+        		prevroutes.add(s);
+             });
+        }
+        
+    	config.setFaces(prevfaces);
+    	config.setRoutes(prevroutes);
+    	
+    	promise.complete(config);
+    	
+    	return promise.future();
+       		
+	  }
 
 }

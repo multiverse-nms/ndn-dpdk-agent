@@ -1,5 +1,7 @@
 package nms.restclient;
 
+import java.util.Objects;
+
 import io.vertx.core.json.JsonObject;
 
 public class Route {
@@ -96,6 +98,9 @@ public class Route {
 	 */
 	public void setCapture(boolean capture) {
 		this.capture = capture;
-	}	
+	}
 	
+	public boolean equals(Object obj) {
+		return Objects.equals(faceId, ((Route) obj).faceId);
+	}
 }

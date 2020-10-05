@@ -15,4 +15,7 @@ public interface RestClient {
 
 	public Future<Void> sendStatus();
 
+
+	public Future<Configuration> compare(Configuration running, Configuration current);
+
 }
