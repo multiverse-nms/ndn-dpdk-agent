@@ -109,6 +109,15 @@ public class Face {
 	public void setPort(String port) {
 		this.port = port;
 	}
+
+	public JsonObject toJsonObject() {
+		JsonObject json = new JsonObject();
+		json.put("id", id);
+		json.put("local", local);
+		json.put("remote", remote);
+		json.put("scheme", scheme);
+		return json;
+	}
 	
 	
 }
