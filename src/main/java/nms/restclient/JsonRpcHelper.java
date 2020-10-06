@@ -36,10 +36,10 @@ public class JsonRpcHelper {
 		String method = "Face.Create";
 		String id = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<String, Object>();
-//		params.put("Local", face.getLocal());
-		params.put("Port", face.getPort());
-		params.put("Remote", face.getRemote());
-		params.put("Scheme", face.getScheme());
+		params.put("local", face.getLocal());
+		params.put("port", face.getPort());
+		params.put("remote", face.getRemote());
+		params.put("scheme", face.getScheme());
 		JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
 		String jsonString = reqOut.toString();
 		return new JsonObject(jsonString);
@@ -49,7 +49,10 @@ public class JsonRpcHelper {
 		String method = "Route.Add";
 		String id = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<String, Object>();
-		
+		params.put("prefix", route.getPrefix());
+		params.put("faceId", route.getFaceId());
+		params.put("origin", route.getOrigin());
+		params.put("cost", route.getCost());
 		JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
 		String jsonString = reqOut.toString();
 		return new JsonObject(jsonString);
