@@ -58,3 +58,7 @@ local.properties
 # Typically, this file would be tracked if it contains build/dependency configurations:
 #.project
 /target/
+
+# local config files
+src/main/resources/hosts
+src/main/resources/hosts
