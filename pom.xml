@@ -9,7 +9,10 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<vertx.version>3.9.0</vertx.version>
-		<verticle.main>nms.Main</verticle.main>
+		<verticle.main>nms.MainVerticle</verticle.main>
+		<version.log4j>1.2.17</version.log4j>
+		<version.logback>1.2.3</version.logback>
+		<version.slf4j>1.7.30</version.slf4j>
 		<junit-jupiter.version>5.4.0</junit-jupiter.version>
 		<assertj-core.version>3.16.1</assertj-core.version>
 	</properties>
@@ -18,7 +21,7 @@
 		<dependency>
 			<groupId>net.named-data</groupId>
 			<artifactId>jndn</artifactId>
-			<version>0.23</version>
+			<version>0.24</version>
 		</dependency>
 		<dependency>
 			<groupId>io.vertx</groupId>
@@ -117,18 +120,31 @@
 		</dependency>
 
 
-		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.30</version>
+			<version>${version.slf4j}</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.30</version>
-			<scope>test</scope>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>${version.log4j}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-core</artifactId>
+			<version>${version.logback}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${version.logback}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 	</dependencies>
