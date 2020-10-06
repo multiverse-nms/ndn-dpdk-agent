@@ -30,6 +30,7 @@ public class WebClientVerticle extends AbstractVerticle {
 		LOG.info("starting " + this.getClass().getName());
 		this.restClient = getRestClient();
 		this.configHandler = new ConfigurationHandler(vertx);
+		this.runningConfig = new Configuration();
 		CredentialsProvider provider = new CredentialsProvider("data.properties");
 		this.login(provider.getUsername(), provider.getPassword()).onComplete(ar -> {
 			if (ar.succeeded()) {
@@ -54,7 +55,7 @@ public class WebClientVerticle extends AbstractVerticle {
 					public void handle(AsyncResult<Configuration> ar) {
 						if (ar.succeeded()) {
 							LOG.info("got new configuration from the controller");
-							Configuration candidate = new Configuration(ar.result().toJsonObject());
+							Configuration candidate = ar.result();
 							LOG.info(candidate.toJsonObject().encodePrettily());
 							configHandler.compare(runningConfig, candidate)
 									.onComplete(new Handler<AsyncResult<Configuration>>() {
@@ -77,9 +78,9 @@ public class WebClientVerticle extends AbstractVerticle {
 
 	private RestClient getRestClient() {
 		RestClient restClient = new RestClientImpl(vertx);
-		restClient.setRootCA(config().getString("root-ca"));
-		restClient.setPort(config().getInteger("http.port"));
-		restClient.setHost(config().getString("http.host"));
+//		restClient.setRootCA(config().getString("root-ca"));
+//		restClient.setPort(config().getInteger("http.port"));
+//		restClient.setHost(config().getString("http.host"));
 		return restClient;
 	}
 

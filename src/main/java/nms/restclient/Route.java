@@ -28,9 +28,9 @@ public class Route {
 	}
 
 	public Route(JsonObject json) {
-		LOG.debug("decodedPrefix", json.getString("prefix"));
+		LOG.debug("decodedPrefix {}", json.getString("prefix"));
 		String decodedPrefix =  decodePrefix(json.getString("prefix"));
-		LOG.debug("decodedPrefix", decodedPrefix);
+		LOG.debug("decodedPrefix {}", decodedPrefix);
 		this.prefix = decodedPrefix;
 		this.faceId = json.getInteger("faceId");
 		this.origin = json.getInteger("origin");
@@ -38,6 +38,7 @@ public class Route {
 	}
 
 	private String decodePrefix(String prefix) {
+		LOG.debug("decodePrefix({})", prefix);
 		byte[] decodedBytes = Base64.getUrlDecoder().decode(prefix);
 		String decodedPrefix = new String(decodedBytes);
 		return decodedPrefix;

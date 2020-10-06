@@ -11,6 +11,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.json.JsonObject;
+import nms.VerticleAdress;
 import nms.forwarder.api.EventBusEndpoint;
 
 import org.slf4j.Logger;
@@ -20,8 +21,8 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 
 	private static int PORT = 9001;
 	private static final Logger LOG = LoggerFactory.getLogger(WebSocketServerVerticle.class);
-	private static String forwarderVerticleAddress = "fw-verticle.eventbus";
-	private static String ribVerticleAddress = "rib-verticle.eventbus";
+	private static String forwarderVerticleAddress = VerticleAdress.forwarder_verticle.getAdress();
+	private static String ribVerticleAddress = VerticleAdress.rib_verticle.getAdress();
 	private Map<String, String> verticlesMap = new HashMap<>();
 	
 	public void start(Promise<Void> promise) {
