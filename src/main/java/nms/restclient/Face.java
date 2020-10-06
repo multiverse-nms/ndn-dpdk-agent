@@ -1,5 +1,7 @@
 package nms.restclient;
 
+import java.util.Objects;
+
 import io.vertx.core.json.JsonObject;
 
 public class Face {
@@ -118,6 +120,8 @@ public class Face {
 		json.put("scheme", scheme);
 		return json;
 	}
-	
-	
+
+	public boolean equals(Object obj) {
+		return Objects.equals(id, ((Face) obj).id);
+	}
 }

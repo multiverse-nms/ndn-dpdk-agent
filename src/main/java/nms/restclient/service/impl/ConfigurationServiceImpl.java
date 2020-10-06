@@ -54,9 +54,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				HttpResponse<Buffer> response = ar.result();
 				if (response.statusCode() == 200) {
 					Configuration candidate = new Gson().fromJson(response.bodyAsString(), Configuration.class);
-					Configuration config =  compare(runningConfiguration,candidate);
-					updateCurrentConfig(config);
-					promise.complete(config);
+				//	Configuration config =  compare(runningConfiguration,candidate);
+					updateCurrentConfig(candidate);
+					promise.complete(candidate);
 				} else {
 					if (response.statusCode() == 401) {
 						refreshTokenAndRetry(request).onComplete(ar1 -> {
@@ -150,48 +150,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 	
 	
-	public Configuration compare(Configuration running, Configuration current){
-		   
-        List<Face> currentfaces = new ArrayList<>(current.getFaces());
-        List<Face> prevfaces = new ArrayList<>(running.getFaces());
-        
-        if(currentfaces.equals(prevfaces)) {
-        	prevfaces.retainAll(currentfaces);
-        }
-        else {
-        	
-        	prevfaces.retainAll(currentfaces);
-        	currentfaces.removeAll(prevfaces);
-        	
-        	currentfaces.forEach(s ->{
-        		prevfaces.add(s);
-             });
-        }
-        
-        running.setFaces(prevfaces);
-
-        
-        List<Route> currentroutes = new ArrayList<>(current.getRoutes());
-        List<Route> prevroutes = new ArrayList<>(running.getRoutes()); 
-        
-            
-        if(currentroutes.equals(prevroutes)) {
-        	prevroutes.retainAll(currentroutes);
-        }
-        else {
-        	
-        	prevroutes.retainAll(currentroutes);
-        	currentroutes.removeAll(prevroutes);
-        	
-        	currentroutes.forEach(s ->{
-        		prevroutes.add(s);
-             });
-        }
-          running.setRoutes(prevroutes);
-          
-		return running ;
-       		
-	  }
+	
 	
 
 }

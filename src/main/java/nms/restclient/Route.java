@@ -4,10 +4,9 @@ import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Objects;
 
 import io.vertx.core.json.JsonObject;
-import net.named_data.jndn.Name;
-
 public class Route {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Route.class);
@@ -135,5 +134,8 @@ public class Route {
 		json.put("origin", origin);
 		json.put("cost", cost);
 		return json;
+	}
+	public boolean equals(Object obj) {
+		return Objects.equals(faceId, ((Route) obj).faceId);
 	}
 }

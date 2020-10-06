@@ -1,6 +1,5 @@
 package nms.restclient;
 
-
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -11,6 +10,8 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
+
+import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +106,54 @@ public class RestClientImpl implements RestClient {
 		});
 		return promise.future();
 	}
+	
+	@Override
+	public  Future<Configuration> compare(Configuration running, Configuration current){
+		
+		Promise<Configuration> promise = Promise.promise();
+        Configuration config = new Configuration ();
+
+        ArrayList<Face> currentfaces = new ArrayList<>(current.getFaces());
+        ArrayList<Face> prevfaces = new ArrayList<>(running.getFaces());
+        
+        if(currentfaces.equals(prevfaces)) {
+        	prevfaces.retainAll(currentfaces);
+        }
+        else {
+        	
+        	prevfaces.retainAll(currentfaces);
+        	currentfaces.removeAll(prevfaces);
+        	
+        	currentfaces.forEach(s ->{
+        		prevfaces.add(s);
+             });
+        }
+        
+        ArrayList<Route> currentroutes = new ArrayList<>(current.getRoutes());
+        ArrayList<Route> prevroutes = new ArrayList<>(running.getRoutes()); 
+        
+            
+        if(currentroutes.equals(prevroutes)) {
+        	prevroutes.retainAll(currentroutes);
+        }
+        else {
+        	
+        	prevroutes.retainAll(currentroutes);
+        	currentroutes.removeAll(prevroutes);
+        	
+        	currentroutes.forEach(s ->{
+        		prevroutes.add(s);
+             });
+        }
+        
+    	config.setFaces(prevfaces);
+    	config.setRoutes(prevroutes);
+    	
+    	promise.complete(config);
+    	
+    	return promise.future();
+       		
+	  }
 
 	@Override
 	public void setRootCA(String path) {

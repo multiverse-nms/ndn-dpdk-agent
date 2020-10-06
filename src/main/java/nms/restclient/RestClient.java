@@ -18,4 +18,6 @@ public interface RestClient {
 
 	public void setHost(String host);
 
+	public Future<Configuration> compare(Configuration running, Configuration current);
+
 }
