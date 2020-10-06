@@ -1,9 +1,12 @@
 package nms;
 
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
@@ -40,6 +43,8 @@ public class MainVerticle extends AbstractVerticle {
 			buffer = resolveHosts(DEFAULT_HOSTS_FILE);
 		} catch (IOException e) {
 			LOG.error("unable to resolve hosts {}", e.getMessage());
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
 		}
 		Vertx vertx = Vertx.vertx(new VertxOptions()
 				.setAddressResolverOptions(new AddressResolverOptions().setHostsValue(buffer)));
@@ -78,8 +83,11 @@ public class MainVerticle extends AbstractVerticle {
 				.compose(v -> deployVerticle(WebClientVerticle.class.getName(), webClientVerticleOptions));
 	}
 
-	private static Buffer resolveHosts(String filename) throws IOException {
-		DataInputStream reader = new DataInputStream(new FileInputStream(filename));
+	private static Buffer resolveHosts(String filename) throws IOException, URISyntaxException {
+		URL res = MainVerticle.class.getClassLoader().getResource(filename);
+		File file = Paths.get(res.toURI()).toFile();
+		String absolutePath = file.getAbsolutePath();
+		DataInputStream reader = new DataInputStream(new FileInputStream(absolutePath));
 		int nBytesToRead = reader.available();
 		byte[] bytes = new byte[nBytesToRead];
 		if (nBytesToRead > 0) {
