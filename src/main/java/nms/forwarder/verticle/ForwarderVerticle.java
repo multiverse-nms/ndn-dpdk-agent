@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import nms.VerticleAdress;
 import nms.forwarder.api.EventBusEndpoint;
 import nms.forwarder.model.face.Face;
 import nms.forwarder.model.face.FaceData;
@@ -30,13 +31,12 @@ import org.slf4j.LoggerFactory;
 public class ForwarderVerticle extends AbstractVerticle {
 
 	private static Logger LOG = LoggerFactory.getLogger(ForwarderVerticle.class.getName());
-	private static String EVENTBUS_ADDRESS = "fw-verticle.eventbus";
 
 	@Override
 	public void start(Promise<Void> promise) {
 		LOG.info("starting verticle");
 		// setup EventBus
-		this.consumeEventBus(EVENTBUS_ADDRESS, promise);
+		this.consumeEventBus(VerticleAdress.forwarder_verticle.getAdress(), promise);
 	}
 
 	private void consumeEventBus(String address, Promise<Void> promise) {
@@ -327,13 +327,17 @@ public class ForwarderVerticle extends AbstractVerticle {
 		Promise<Face> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
 		Map<String, Object> params = req.getNamedParams();
-//		String local = (String) params.get("Local");
-		String port = (String) params.get("Port");
-		String remote = (String) params.get("Remote");
-		String scheme = (String) params.get("Scheme");
+		String local = (String) params.get("local");
+		LOG.debug("local={}", local);
+		String port = (String) params.get("port");
+		LOG.debug("port={}", port);
+		String remote = (String) params.get("remote");
+		LOG.debug("remote={}", remote);
+		String scheme = (String) params.get("scheme");
+		LOG.debug("scheme={}", scheme);
 		Face face = null;
 		try {
-			face = reqBuilder.param("Remote", remote).param("Scheme", scheme).param("Port", port).returnAs(Face.class)
+			face = reqBuilder.param("remote", remote).param("scheme", scheme).param("port", port).returnAs(Face.class)
 					.execute();
 			promise.complete(face);
 		} catch (JsonRpcException e) {
@@ -403,7 +407,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	public static String getEventBusAddress() {
-		return EVENTBUS_ADDRESS;
+		return VerticleAdress.forwarder_verticle.getAdress();
 	}
 
 }
