@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import jdk.internal.org.jline.utils.Log;
 
 public class Configuration {
 	private ArrayList<Face> faces;
