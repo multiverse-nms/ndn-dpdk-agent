@@ -9,7 +9,7 @@
 		</encoder>
 	</appender>
 
-	<logger name="com.elmiomar" level="debug" />
+	<logger name="nms" level="debug" />
 	<root level="info">
 		<appender-ref ref="STDOUT" />
 	</root>
