@@ -14,6 +14,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import net.named_data.jndn.Name;
+import nms.VerticleAdress;
 import nms.forwarder.api.EventBusEndpoint;
 import nms.rib.Fib;
 import nms.rib.Rib;
@@ -29,8 +30,6 @@ import org.slf4j.LoggerFactory;
 public class RibVerticle extends AbstractVerticle {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RibVerticle.class);
-	private static String RIB_EVENTBUS_ADDRESS = "rib-verticle.eventbus";
-	private static String FORWARDER_EVENTBUS_ADDRESS = "fw-verticle.eventbus";
 	private RibService ribService;
 	private Fib currentFib;
 
@@ -41,7 +40,7 @@ public class RibVerticle extends AbstractVerticle {
 		LOG.info("instantiated the RIB service");
 		currentFib = new Fib(); // the agent starts with an empty fib
 		// setup EventBus
-		this.consumeEventBus(RIB_EVENTBUS_ADDRESS, promise);
+		this.consumeEventBus(VerticleAdress.rib_verticle.getAdress(), promise);
 
 	}
 
@@ -63,12 +62,12 @@ public class RibVerticle extends AbstractVerticle {
 			Map<String, Object> params = req.getNamedParams();
 
 			if (method.equals(EventBusEndpoint.ADD_ROUTE.getName())) {
-				Name prefix = new Name((String) params.get("Prefix"));
-				Number faceNumber = (Number) params.get("FaceId");
+				Name prefix = new Name((String) params.get("prefix"));
+				Number faceNumber = (Number) params.get("faceId");
 				int faceId = faceNumber.intValue();
-				Number originNumber = (Number) params.get("Origin");
+				Number originNumber = (Number) params.get("origin");
 				int origin = originNumber.intValue();
-				Number costNumber = (Number) params.get("Cost");
+				Number costNumber = (Number) params.get("cost");
 				int cost = costNumber.intValue();
 				LOG.debug("prefix={}, faceId={}, origin={}, cost={}", prefix.toUri(), faceId, origin, cost);
 
@@ -87,10 +86,10 @@ public class RibVerticle extends AbstractVerticle {
 			}
 
 			if (method.equals(EventBusEndpoint.REMOVE_ROUTE.getName())) {
-				Name name = new Name((String) params.get("Prefix"));
-				Number faceNumber = (Number) params.get("FaceId");
+				Name name = new Name((String) params.get("prefix"));
+				Number faceNumber = (Number) params.get("faceId");
 				int faceId = faceNumber.intValue();
-				Number originNumber = (Number) params.get("Origin");
+				Number originNumber = (Number) params.get("origin");
 				int origin = originNumber.intValue();
 
 				ribService.removeRoute(new Route(name, faceId, origin)).onComplete(ar -> {
@@ -138,7 +137,7 @@ public class RibVerticle extends AbstractVerticle {
 	private Future<Void> sendCommandFuture(FibCommand command) {
 		Promise<Void> promise = Promise.promise();
 		LOG.info("COMMAND={}", command);
-		vertx.eventBus().request(FORWARDER_EVENTBUS_ADDRESS, command.toJsonRpcRequest(), ar -> {
+		vertx.eventBus().request(VerticleAdress.forwarder_verticle.getAdress(), command.toJsonRpcRequest(), ar -> {
 			if (ar.succeeded()) {
 				promise.complete();
 			} else {
