@@ -42,7 +42,7 @@ public class MainVerticle extends AbstractVerticle {
 			LOG.error("unable to resolve hosts {}", e.getMessage());
 		}
 		Vertx vertx = Vertx.vertx(new VertxOptions()
-				.setAddressResolverOptions(new AddressResolverOptions().setHostsValue(Buffer.buffer("192.168.1.208 mnms.controller"))));
+				.setAddressResolverOptions(new AddressResolverOptions().setHostsValue(buffer)));
 		vertx.deployVerticle(new MainVerticle());
 	}
 
@@ -53,7 +53,7 @@ public class MainVerticle extends AbstractVerticle {
 				LOG.error("failed to retrieve the verticles configuration");
 			} else {
 				JsonObject configServerVerticle = ar.result().getJsonObject("main.verticle");
-				deployAllVerticles(configServerVerticle, promise).onComplete(ar1 -> {
+				deployAllVerticles(configServerVerticle).onComplete(ar1 -> {
 					if (ar1.succeeded()) {
 						LOG.info("all verticles were deployed successfully");
 						promise.complete();
@@ -66,7 +66,7 @@ public class MainVerticle extends AbstractVerticle {
 		});
 	}
 
-	private Future<Void> deployAllVerticles(JsonObject config, Promise<Void> promise) {
+	private Future<Void> deployAllVerticles(JsonObject config) {
 		DeploymentOptions ribVerticleOptions = new DeploymentOptions().setConfig(config().getJsonObject("rib.verticle"));
 		DeploymentOptions fwVerticleOptions = new DeploymentOptions().setConfig(config().getJsonObject("forwarder.verticle"));
 		DeploymentOptions wsVerticleOptions = new DeploymentOptions().setConfig(config().getJsonObject("websockets.verticle"));
