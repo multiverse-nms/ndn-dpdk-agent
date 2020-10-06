@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+
 import com.thetransactioncompany.jsonrpc2.JSONRPC2ParseException;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
 
@@ -12,18 +13,18 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import net.named_data.jndn.Name;
 import nms.forwarder.api.EventBusEndpoint;
 import nms.rib.Fib;
 import nms.rib.Rib;
-import nms.rib.RibAction;
 import nms.rib.Route;
 import nms.rib.commands.FibCommand;
-import nms.rib.service.RibHandler;
 import nms.rib.service.RibService;
 import nms.rib.service.RibServiceImpl;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class RibVerticle extends AbstractVerticle {
 
@@ -35,10 +36,9 @@ public class RibVerticle extends AbstractVerticle {
 
 	@Override
 	public void start(Promise<Void> promise) {
-		LOG.info("starting " + this.getClass().getName());
+		LOG.info("starting verticle");
 		this.ribService = new RibServiceImpl();
-		LOG.info("instantiated RIB Service");
-
+		LOG.info("instantiated the RIB service");
 		currentFib = new Fib(); // the agent starts with an empty fib
 		// setup EventBus
 		this.consumeEventBus(RIB_EVENTBUS_ADDRESS, promise);
@@ -53,12 +53,12 @@ public class RibVerticle extends AbstractVerticle {
 				req = JSONRPC2Request.parse(body);
 
 			} catch (JSONRPC2ParseException e) {
-				LOG.error(e.getMessage());
+				LOG.error("error while parsing the json rpc request {}", e.getMessage());
 				return;
 			}
 
 			String method = req.getMethod();
-			LOG.info("[eventbus] method = " + method);
+			LOG.debug("METHOD={}", method);
 
 			Map<String, Object> params = req.getNamedParams();
 
@@ -70,8 +70,7 @@ public class RibVerticle extends AbstractVerticle {
 				int origin = originNumber.intValue();
 				Number costNumber = (Number) params.get("Cost");
 				int cost = costNumber.intValue();
-				LOG.info("Prefix: " + prefix.toUri() + ", FaceId: " + faceId + ", Origin: " + origin + ", Cost: "
-						+ cost);
+				LOG.debug("prefix={}, faceId={}, origin={}, cost={}", prefix.toUri(), faceId, origin, cost);
 
 				Route route = new Route(prefix, faceId, origin);
 				route.setCost(cost);
@@ -115,20 +114,21 @@ public class RibVerticle extends AbstractVerticle {
 		// get the fib commands that need to be sent to the forward verticle
 		List<FibCommand> fibCommands = fib.compare(currentFib);
 		currentFib = fib;
+		@SuppressWarnings("rawtypes")
 		List<Future> allFutures = new ArrayList<>();
 		fibCommands.forEach(command -> {
 			if (command.hasNexthops()) {
-				System.out.println("COMMAND: " + command);
+				LOG.debug("COMMAND={}", command);
 				allFutures.add(sendCommandFuture(command));
 			}
 
 		});
 		CompositeFuture.all(allFutures).onComplete(ar -> {
 			if (ar.succeeded()) {
-				LOG.debug("all commands were executed successfully");
+				LOG.info("all commands were executed successfully");
 				promise.complete();
 			} else {
-				LOG.debug("something went bad");
+				LOG.error("something went bad");
 				promise.fail(ar.cause());
 			}
 		});
@@ -137,7 +137,7 @@ public class RibVerticle extends AbstractVerticle {
 
 	private Future<Void> sendCommandFuture(FibCommand command) {
 		Promise<Void> promise = Promise.promise();
-		LOG.info("command: " + command);
+		LOG.info("COMMAND={}", command);
 		vertx.eventBus().request(FORWARDER_EVENTBUS_ADDRESS, command.toJsonRpcRequest(), ar -> {
 			if (ar.succeeded()) {
 				promise.complete();
@@ -150,7 +150,7 @@ public class RibVerticle extends AbstractVerticle {
 
 	@Override
 	public void stop() {
-		LOG.info("stopping " + this.getClass().getName());
+		LOG.info("stopping verticle");
 	}
 
 }

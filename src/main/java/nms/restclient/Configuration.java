@@ -3,13 +3,19 @@ package nms.restclient;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import jdk.internal.org.jline.utils.Log;
 
 public class Configuration {
-	private List<Face> faces;
-	private List<Route> routes;
+	private ArrayList<Face> faces;
+	private ArrayList<Route> routes;
 
+	private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
+	
 	public Configuration() {
 		this.faces = new ArrayList<>();
 		this.routes = new ArrayList<>();
@@ -28,8 +34,12 @@ public class Configuration {
 		JsonArray routesArr = json.getJsonArray("routes");
 		if (routesArr.size() > 0) {
 			routesArr.forEach(route -> {
-				if (route instanceof JsonObject)
+				if (route instanceof JsonObject) {
+					JsonObject routeObj = (JsonObject)route;
+					LOG.debug(routeObj.toString());
 					this.routes.add(new Route((JsonObject)route));
+				}
+					
 			});
 		}
 	}
@@ -45,28 +55,28 @@ public class Configuration {
 	/**
 	 * @return the faces
 	 */
-	public List<Face> getFaces() {
+	public ArrayList<Face> getFaces() {
 		return faces;
 	}
 
 	/**
 	 * @param faces the faces to set
 	 */
-	public void setFaces(List<Face> faces) {
+	public void setFaces(ArrayList<Face> faces) {
 		this.faces = faces;
 	}
 
 	/**
 	 * @return the routes
 	 */
-	public List<Route> getRoutes() {
+	public ArrayList<Route> getRoutes() {
 		return routes;
 	}
 
 	/**
 	 * @param routes the routes to set
 	 */
-	public void setRoutes(List<Route> routes) {
+	public void setRoutes(ArrayList<Route> routes) {
 		this.routes = routes;
 	}
 
@@ -74,11 +84,11 @@ public class Configuration {
 		JsonObject json = new JsonObject();
 		JsonArray facesArr = new JsonArray();
 		this.faces.forEach(face -> {
-			facesArr.add(face);
+			facesArr.add(face.toJsonObject());
 		});
 		JsonArray routesArr = new JsonArray();
 		this.routes.forEach(route -> {
-			routesArr.add(route);
+			routesArr.add(route.toJsonObject());
 		});
 		json.put("faces", facesArr);
 		json.put("routes", routesArr);

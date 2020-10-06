@@ -1,6 +1,8 @@
 package nms.restclient;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -10,8 +12,27 @@ import io.vertx.core.json.JsonObject;
 
 public class JsonRpcHelper {
 	
+	public JsonRpcHelper() {
+		
+	}
 	
-	public static JsonObject makeNewFaceCommand(Face face) {
+	public List<JsonObject> createMutipleFacesCommands(List<Face> faces) {	
+		List<JsonObject> batch = new ArrayList<>();	
+		faces.forEach(face -> {
+			batch.add(makeNewFaceCommand(face));
+		});
+		return batch;
+	}
+	
+	public List<JsonObject> createMutipleRoutesCommands(List<Route> routes) {	
+		List<JsonObject> batch = new ArrayList<>();	
+		routes.forEach(route -> {
+			batch.add(makeNewRouteCommand(route));
+		});
+		return batch;
+	}
+	
+	public JsonObject makeNewFaceCommand(Face face) {
 		String method = "Face.Create";
 		String id = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<String, Object>();
@@ -24,7 +45,7 @@ public class JsonRpcHelper {
 		return new JsonObject(jsonString);
 	}
 	
-	public static JsonObject makeNewRouteCommand(Route route) {
+	public JsonObject makeNewRouteCommand(Route route) {
 		String method = "Route.Add";
 		String id = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<String, Object>();

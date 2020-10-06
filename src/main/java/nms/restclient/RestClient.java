@@ -1,13 +1,10 @@
 package nms.restclient;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 
 public interface RestClient {
 
 	public Future<Configuration> getConfiguration();
-
 
 	public Future<String> login(String user, String password);
 
@@ -15,6 +12,11 @@ public interface RestClient {
 
 	public Future<Void> sendStatus();
 
+	public void setRootCA(String path);
+
+	public void setPort(Integer port);
+
+	public void setHost(String host);
 
 	public Future<Configuration> compare(Configuration running, Configuration current);
 
