@@ -11,8 +11,8 @@ import io.vertx.core.json.JsonObject;
 import jdk.internal.org.jline.utils.Log;
 
 public class Configuration {
-	private List<Face> faces;
-	private List<Route> routes;
+	private ArrayList<Face> faces;
+	private ArrayList<Route> routes;
 
 	private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 	
@@ -55,28 +55,28 @@ public class Configuration {
 	/**
 	 * @return the faces
 	 */
-	public List<Face> getFaces() {
+	public ArrayList<Face> getFaces() {
 		return faces;
 	}
 
 	/**
 	 * @param faces the faces to set
 	 */
-	public void setFaces(List<Face> faces) {
+	public void setFaces(ArrayList<Face> faces) {
 		this.faces = faces;
 	}
 
 	/**
 	 * @return the routes
 	 */
-	public List<Route> getRoutes() {
+	public ArrayList<Route> getRoutes() {
 		return routes;
 	}
 
 	/**
 	 * @param routes the routes to set
 	 */
-	public void setRoutes(List<Route> routes) {
+	public void setRoutes(ArrayList<Route> routes) {
 		this.routes = routes;
 	}
 
