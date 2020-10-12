@@ -143,6 +143,24 @@ public class RestClientImpl implements RestClient {
 			return json;
 	}
 
+	@Override
+	public void setRootCA(String path) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setPort(Integer port) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setHost(String host) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	
 	
 

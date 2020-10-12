@@ -32,7 +32,7 @@ public class JsonRpcHelper {
 		return batch;
 	}
 	
-	public JsonObject makeNewFaceCommand(Face face) {
+	public static JsonObject makeNewFaceCommand(Face face) {
 		String method = "Face.Create";
 		String id = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<String, Object>();
@@ -45,7 +45,7 @@ public class JsonRpcHelper {
 		return new JsonObject(jsonString);
 	}
 	
-	public JsonObject makeNewRouteCommand(Route route) {
+	public static JsonObject makeNewRouteCommand(Route route) {
 		String method = "Route.Add";
 		String id = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<String, Object>();

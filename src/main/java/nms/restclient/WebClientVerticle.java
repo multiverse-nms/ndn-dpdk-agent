@@ -5,6 +5,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonObject;
 import nms.restclient.service.impl.CredentialsProvider;
 
 import org.slf4j.Logger;
@@ -15,6 +16,10 @@ public class WebClientVerticle extends AbstractVerticle {
 	private RestClient restClient;
 
 	private static final Logger LOG = LoggerFactory.getLogger(WebClientVerticle.class);
+
+	private static final String FORWARDER_EVENTBUS_ADDRESS = null;
+
+	private static final String RIB_EVENTBUS_ADDRESS = null;
 	private static long CONFIG_PERIOD = 150000; // delay the delay in milliseconds, after which the timer will fire
 	private static long STATUS_PERIOD = 100000; // 100s
 
@@ -102,7 +107,7 @@ public class WebClientVerticle extends AbstractVerticle {
 			this.restClient.getConfiguration().onComplete(handler);
 			vertx.setTimer(CONFIG_PERIOD, configTask); // refresh config every 150s
 		};
-<<<<<<< HEAD
+
 		vertx.setTimer(1000, configTask ); // get initial config after 1 second
 	}
 
@@ -141,12 +146,9 @@ public class WebClientVerticle extends AbstractVerticle {
 		return promise.future();
 	}
 
-	
-=======
-		vertx.setTimer(5000, configTask); // get initial config after 1 second
-	}
 
->>>>>>> 103f8d32cf7f7679c7390520fd9999ae1b55d7ba
+		
+
 	@Override
 	public void stop(Promise<Void> promise) throws Exception {
 		super.stop(promise);
