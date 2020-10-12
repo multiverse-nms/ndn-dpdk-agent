@@ -16,8 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import nms.VerticleAdress;
 import nms.forwarder.api.EventBusEndpoint;
 import nms.forwarder.model.face.Face;
 import nms.forwarder.model.face.FaceData;
@@ -26,15 +25,18 @@ import nms.forwarder.model.version.Version;
 import nms.forwarder.model.port.PortInfo;
 import nms.forwarder.rpc.RpcTransport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ForwarderVerticle extends AbstractVerticle {
 
-	Logger LOG = LoggerFactory.getLogger(ForwarderVerticle.class.getName());
-	private static String EVENTBUS_ADDRESS = "fw-verticle.eventbus";
+	private static Logger LOG = LoggerFactory.getLogger(ForwarderVerticle.class.getName());
 
 	@Override
 	public void start(Promise<Void> promise) {
+		LOG.info("starting verticle");
 		// setup EventBus
-		this.consumeEventBus(EVENTBUS_ADDRESS, promise);
+		this.consumeEventBus(VerticleAdress.forwarder_verticle.getAdress(), promise);
 	}
 
 	private void consumeEventBus(String address, Promise<Void> promise) {
@@ -45,15 +47,14 @@ public class ForwarderVerticle extends AbstractVerticle {
 
 			try {
 				req = JSONRPC2Request.parse(body);
-
 			} catch (JSONRPC2ParseException e) {
-				System.out.println(e.getMessage());
+				LOG.error("error while parsing the json rpc request {}", e.getMessage());
 				return;
 			}
 
 			method = req.getMethod();
-
-			LOG.info("[eventbus] method = " + method);
+			LOG.debug("METHOD={}" + method);
+			
 			if (method.equals(EventBusEndpoint.GET_VERSION.getName())) {
 				this.getVersioFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
@@ -95,7 +96,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 							portsJson.add(port.toJsonObject());
 						});
 						JsonObject result = new JsonObject().put("ports", portsJson);
-						LOG.info(result.encodePrettily());
+						LOG.debug("PORTS={}", result.encodePrettily());
 						message.reply(result);
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
@@ -112,7 +113,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 							facesJson.add(face.toJsonObject());
 						});
 						JsonObject result = new JsonObject().put("faces", facesJson);
-						LOG.info(result.encodePrettily());
+						LOG.debug("FACES={}", result.encodePrettily());
 						message.reply(result);
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
@@ -129,7 +130,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 							fibJson.add(entry);
 						});
 						JsonObject result = new JsonObject().put("fib", fibJson);
-						LOG.info(result.encodePrettily());
+						LOG.debug("FIB={}", result.encodePrettily());
 						message.reply(result);
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
@@ -140,7 +141,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 			if (method.equals(EventBusEndpoint.GET_FACE.getName())) {
 				this.getFaceFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
-						LOG.info(ar.result().toJsonObject().encodePrettily());
+						LOG.debug("FACE={}", ar.result().toJsonObject().encodePrettily());
 						message.reply(ar.result().toJsonObject());
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
@@ -150,7 +151,6 @@ public class ForwarderVerticle extends AbstractVerticle {
 			}
 
 			if (method.equals(EventBusEndpoint.INSERT_FIB.getName())) {
-
 				this.insertFibFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
 						message.reply(new JsonObject().put("status", "success").put("message", "FIB was updated"));
@@ -191,7 +191,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 			ErrorMessage error = e.getErrorMessage();
 
 			if (error.getCode() == -32602) {
-				LOG.error("invalid parameter: " + error.getMessage());
+				LOG.error("invalid parameter: {} ", error.getMessage());
 			}
 			promise.fail(error.getMessage());
 		} catch (IllegalStateException e) {
@@ -215,7 +215,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 			ErrorMessage error = e.getErrorMessage();
 
 			if (error.getCode() == -32602) {
-				LOG.error("invalid parameter: " + error.getMessage());
+				LOG.error("invalid parameter: {}", error.getMessage());
 			}
 			promise.fail(error.getMessage());
 		} catch (IllegalStateException e) {
@@ -308,9 +308,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 
 			promise.complete(version);
 		} catch (JsonRpcException e) {
-//          e.printStackTrace();
 			ErrorMessage error = e.getErrorMessage();
-
 			if (error.getCode() == -32602) {
 				LOG.error("invalid parameter: " + error.getMessage());
 			}
@@ -329,13 +327,17 @@ public class ForwarderVerticle extends AbstractVerticle {
 		Promise<Face> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
 		Map<String, Object> params = req.getNamedParams();
-//		String local = (String) params.get("Local");
-		String port = (String) params.get("Port");
-		String remote = (String) params.get("Remote");
-		String scheme = (String) params.get("Scheme");
+		String local = (String) params.get("local");
+		LOG.debug("local={}", local);
+		String port = (String) params.get("port");
+		LOG.debug("port={}", port);
+		String remote = (String) params.get("remote");
+		LOG.debug("remote={}", remote);
+		String scheme = (String) params.get("scheme");
+		LOG.debug("scheme={}", scheme);
 		Face face = null;
 		try {
-			face = reqBuilder.param("Remote", remote).param("Scheme", scheme).param("Port", port).returnAs(Face.class)
+			face = reqBuilder.param("remote", remote).param("scheme", scheme).param("port", port).returnAs(Face.class)
 					.execute();
 			promise.complete(face);
 		} catch (JsonRpcException e) {
@@ -366,7 +368,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 			ErrorMessage error = e.getErrorMessage();
 
 			if (error.getCode() == -32602) {
-				LOG.error("invalid parameter: " + error.getMessage());
+				LOG.error("invalid parameter: {}", error.getMessage());
 			}
 			promise.fail(error.getMessage());
 		} catch (IllegalStateException e) {
@@ -383,7 +385,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 		Map<String, Object> params = req.getNamedParams();
 		Number faceNumber = (Number) params.get("Id");
 		int faceId = faceNumber.intValue();
-		LOG.info("retrieving info of face with ID " + faceId);
+		LOG.info("retrieving info of face with ID={}", faceId);
 		FaceData face = null;
 		try {
 			face = client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Id", faceId)
@@ -401,11 +403,11 @@ public class ForwarderVerticle extends AbstractVerticle {
 
 	@Override
 	public void stop() {
-		LOG.info("stopping " + this.getClass().getName());
+		LOG.info("stopping verticle");
 	}
 
 	public static String getEventBusAddress() {
-		return EVENTBUS_ADDRESS;
+		return VerticleAdress.forwarder_verticle.getAdress();
 	}
 
 }

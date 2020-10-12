@@ -11,16 +11,18 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import nms.VerticleAdress;
 import nms.forwarder.api.EventBusEndpoint;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WebSocketServerVerticle extends AbstractVerticle {
 
-	private static int PORT = 9000;
+	private static int PORT = 9001;
 	private static final Logger LOG = LoggerFactory.getLogger(WebSocketServerVerticle.class);
-	private static String forwarderVerticleAddress = "fw-verticle.eventbus";
-	private static String ribVerticleAddress = "rib-verticle.eventbus";
+	private static String forwarderVerticleAddress = VerticleAdress.forwarder_verticle.getAdress();
+	private static String ribVerticleAddress = VerticleAdress.rib_verticle.getAdress();
 	private Map<String, String> verticlesMap = new HashMap<>();
 	
 	public void start(Promise<Void> promise) {
@@ -36,14 +38,12 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 		server.webSocketHandler(new Handler<ServerWebSocket>() {
 			@Override
 			public void handle(ServerWebSocket socket) {
-				socket.textMessageHandler((msg) -> {
+				socket.textMessageHandler(msg -> {
 					JsonObject json = new JsonObject(msg);
-					LOG.info("received request from client:\n" + json.encodePrettily());
+					LOG.debug("received request from client:\n{}", json.encodePrettily());
 					String method = json.getString("method");
-
 					String correspondingVerticle = verticlesMap.get(method);
-					
-					LOG.info("forwaring request to verticle: " + correspondingVerticle);
+					LOG.info("forwaring request to verticle {} ", correspondingVerticle);
 					sendToVerticle(correspondingVerticle, json).onComplete(ar -> {
 						if (ar.succeeded()) {
 							if (ar.result() != null) {

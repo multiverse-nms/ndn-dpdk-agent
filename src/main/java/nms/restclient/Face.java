@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import io.vertx.core.json.JsonObject;
 
-public class Face{
+public class Face {
 
 	private int id;
 	private String port;
@@ -111,7 +111,16 @@ public class Face{
 	public void setPort(String port) {
 		this.port = port;
 	}
-	 
+
+	public JsonObject toJsonObject() {
+		JsonObject json = new JsonObject();
+		json.put("id", id);
+		json.put("local", local);
+		json.put("remote", remote);
+		json.put("scheme", scheme);
+		return json;
+	}
+
 	public boolean equals(Object obj) {
 		return Objects.equals(id, ((Face) obj).id);
 	}
