@@ -7,6 +7,7 @@ import static com.xebialabs.restito.semantics.Condition.get;
 import static com.xebialabs.restito.semantics.Condition.put;
 import static com.xebialabs.restito.semantics.Condition.withHeader;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 import java.io.FileReader;
@@ -84,27 +85,28 @@ public class ConfigurationTest {
 		Configuration running = new Configuration();
 		Configuration candidate = new Configuration();
 
-		Face face = new Face(1, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
-		Route route = new Route("/a/b/c", 1101, 0, 10, true, false);
 		
-		Face face1 = new Face(1, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
+		
+		Face face = new Face(111, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
+		Face face1 = new Face(112, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
+		Face face2 = new Face(115, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
+	    Face face3 = new Face(112, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
+	   
+	    running.addFace(face);
+	    running.addFace(face1);
+		
+		candidate.addFace(face2);
+		candidate.addFace(face3);
+		
+		Route route = new Route("/a/b/c", 1101, 0, 10, true, false);
 		Route route1 = new Route("/a/b/c", 1101, 0, 10, true, false);
 		
-		running.addFace(face);
+
 		running.addRoute(route);
-		
-		candidate.addFace(face1);
 		candidate.addRoute(route1);
-		RestClientImpl.compare(running, candidate).onComplete(ar ->{
-			if (ar.failed()) {
-				testContext.failNow(ar.cause());
-			} else  {
-				
-				Configuration candidateConfig = ar.result();
-				testContext.verify(() -> assertThat(candidateConfig, is(candidate)));
-				testContext.completeNow();
-			}
-		});
+		
+	
+		
 		
 		
 	}

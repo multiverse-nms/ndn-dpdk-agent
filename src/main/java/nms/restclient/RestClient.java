@@ -1,8 +1,11 @@
 package nms.restclient;
 
+import java.util.List;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
 
 public interface RestClient {
 
@@ -15,7 +18,7 @@ public interface RestClient {
 
 	public Future<Void> sendStatus();
 
+	public List<JsonObject> compareConfiguration(Configuration prev, Configuration current); 
 
-	public Future<Configuration> compare(Configuration running, Configuration current);
 
 }

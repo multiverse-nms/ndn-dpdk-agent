@@ -34,4 +34,14 @@ public class JsonRpcHelper {
 		return new JsonObject(jsonString);
 	}
 
+	public static JsonObject makeDestroyFaceCommand(Face face) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public static JsonObject makeDestroyFaceCommand(Route face) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

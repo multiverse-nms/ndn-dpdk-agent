@@ -12,7 +12,7 @@ import io.vertx.core.logging.LoggerFactory;
 import nms.restclient.service.impl.CredentialsProvider;
 
 public class WebClientVerticle extends AbstractVerticle {
-
+  
 	private RestClient restClient;
 
 	private static final Logger LOG = LoggerFactory.getLogger(WebClientVerticle.class);
@@ -122,11 +122,7 @@ public class WebClientVerticle extends AbstractVerticle {
 		return promise.future();
 	}
 
-	private void compareConfiguration(Configuration prev, Configuration current) {
-		// TODO Auto-generated method stub
-
-	}
-
+	
 	@Override
 	public void stop() {
 		LOG.info("stopping " + this.getClass().getName());

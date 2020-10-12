@@ -27,12 +27,15 @@ public class RestClientImpl implements RestClient {
 	private static String HOST = "mnms.controller";
 	private static final Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
 	private String token = "";
+	private  Comparable<Face> typeFace = new Comparable<Face>();
+	private  Comparable<Route> typeRoute = new Comparable<Route>();
 
 	public RestClientImpl(Vertx vertx) {
 		WebClientOptions options = new WebClientOptions();
 		options.setSsl(true);
 		options.setPemTrustOptions(new PemTrustOptions().addCertPath("mnms-rootCA.crt.pem"));
 		this.webClient = WebClient.create(vertx, options);
+		
 	}
 
 	@Override
@@ -109,51 +112,38 @@ public class RestClientImpl implements RestClient {
 	}
 	
 	@Override
-	public  Future<Configuration> compare(Configuration running, Configuration current){
+	public List<JsonObject> compareConfiguration(Configuration prev, Configuration current) {
 		
-		Promise<Configuration> promise = Promise.promise();
-        Configuration config = new Configuration ();
+		 List <JsonObject> json = new ArrayList<>();
+		 
+			typeFace.getDifferenceOfLists(prev.getFaces(), current.getFaces())
+			.forEach(face -> {
+		    	json.add(JsonRpcHelper.makeNewFaceCommand(face));
+		    });
+			
+			typeFace.getUnionOfLists(prev.getFaces(), current.getFaces())
+			.forEach(face -> {
+		        if (!(typeFace.contains(current.getFaces(), face))) {
+		        	json.add(JsonRpcHelper.makeDestroyFaceCommand(face));
+		        }
+		    });
+			
+			
+			typeRoute.getDifferenceOfLists(prev.getRoutes(), current.getRoutes())
+			.forEach(face -> {
+			    	json.add(JsonRpcHelper.makeNewRouteCommand(face));
+			    });
+				
+			typeRoute.getUnionOfLists(prev.getRoutes(), current.getRoutes())
+			.forEach(face -> {
+			        if (!(typeRoute.contains(current.getRoutes(), face))) {
+			        	json.add(JsonRpcHelper.makeDestroyFaceCommand(face));
+			        }
+			 });
+			return json;
+	}
 
-		List<Face> currentfaces = new ArrayList<>(current.getFaces());
-        List<Face> prevfaces = new ArrayList<>(running.getFaces());
-        
-        if(currentfaces.equals(prevfaces)) {
-        	prevfaces.retainAll(currentfaces);
-        }
-        else {
-        	
-        	prevfaces.retainAll(currentfaces);
-        	currentfaces.removeAll(prevfaces);
-        	
-        	currentfaces.forEach(s ->{
-        		prevfaces.add(s);
-             });
-        }
-        
-        List<Route> currentroutes = new ArrayList<>(current.getRoutes());
-        List<Route> prevroutes = new ArrayList<>(running.getRoutes()); 
-        
-            
-        if(currentroutes.equals(prevroutes)) {
-        	prevroutes.retainAll(currentroutes);
-        }
-        else {
-        	
-        	prevroutes.retainAll(currentroutes);
-        	currentroutes.removeAll(prevroutes);
-        	
-        	currentroutes.forEach(s ->{
-        		prevroutes.add(s);
-             });
-        }
-        
-    	config.setFaces(prevfaces);
-    	config.setRoutes(prevroutes);
-    	
-    	promise.complete(config);
-    	
-    	return promise.future();
-       		
-	  }
+	
+	
 
 }
