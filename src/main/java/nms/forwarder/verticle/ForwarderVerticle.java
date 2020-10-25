@@ -53,8 +53,8 @@ public class ForwarderVerticle extends AbstractVerticle {
 			}
 
 			method = req.getMethod();
-			LOG.debug("METHOD={}" + method);
-			
+			LOG.debug("METHOD={}", method);
+
 			if (method.equals(EventBusEndpoint.GET_VERSION.getName())) {
 				this.getVersioFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
@@ -68,7 +68,8 @@ public class ForwarderVerticle extends AbstractVerticle {
 			if (method.equals(EventBusEndpoint.CREATE_FACE.getName())) {
 				this.createFaceFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
-						message.reply(ar.result().toJsonObject());
+						LOG.debug("Face={}", ar.result());
+						message.reply(ar.result());
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
 					}
@@ -79,14 +80,16 @@ public class ForwarderVerticle extends AbstractVerticle {
 			if (method.equals(EventBusEndpoint.DESTROY_FACE.getName())) {
 				this.destroyFaceFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
-						message.reply(new JsonObject().put("status", "success").put("message", "face with Id " + ar.result() + " was destroyed"));
+						LOG.debug("Face={}", ar.result());
+						message.reply(new JsonObject().put("status", "success").put("message",
+								"face with Id " + ar.result() + " was destroyed"));
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
 					}
 				});
 
 			}
-			
+
 			if (method.equals(EventBusEndpoint.LIST_PORTS.getName())) {
 				this.getPortsFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
@@ -120,7 +123,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 					}
 				});
 			}
-			
+
 			if (method.equals(EventBusEndpoint.LIST_FIB.getName())) {
 				this.getFibFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
@@ -235,7 +238,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 			try {
 				client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Name", name)
 						.param("Nexthops", nexthops).param("StrategyId", 1).returnAs(FibEntry.class).execute();
-				
+
 			} catch (JsonRpcException e) {
 				e.printStackTrace();
 				ErrorMessage error = e.getErrorMessage();
@@ -259,7 +262,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 		String name = (String) params.get("Name");
 		LOG.info("attempt to erase fib entry prefix " + name);
 		try {
-			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Name", name).returnAs(Void.class).execute();
+			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Name", name).execute();
 			promise.complete(name);
 		} catch (JsonRpcException e) {
 			e.printStackTrace();
@@ -279,11 +282,11 @@ public class ForwarderVerticle extends AbstractVerticle {
 		Promise<Integer> promise = Promise.promise();
 
 		Map<String, Object> params = req.getNamedParams();
-		Number faceNumber = (Number) params.get("Id");
+		Number faceNumber = (Number) params.get("fwdId");
 		int faceId = faceNumber.intValue();
 		LOG.info("attempt to destroy face with ID " + faceId);
 		try {
-			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("Id", faceId).execute();
+			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("id", faceId).execute();
 			promise.complete(faceId);
 		} catch (JsonRpcException e) {
 			e.printStackTrace();
@@ -319,27 +322,31 @@ public class ForwarderVerticle extends AbstractVerticle {
 
 	}
 
-
-	private Future<Face> createFaceFuture_JsonRPC(JSONRPC2Request req) {
+	private Future<JsonObject> createFaceFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 
-		Promise<Face> promise = Promise.promise();
+		Promise<JsonObject> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
 		Map<String, Object> params = req.getNamedParams();
+		Number crtlIdNumber = (Number) params.get("ctrlId");
+		int ctrlId = crtlIdNumber.intValue();
+		LOG.debug("ctrlId={}", ctrlId);
 		String local = (String) params.get("local");
 		LOG.debug("local={}", local);
-		String port = (String) params.get("port");
-		LOG.debug("port={}", port);
+//		String port = (String) params.get("port");
+//		LOG.debug("port={}", port);
 		String remote = (String) params.get("remote");
 		LOG.debug("remote={}", remote);
 		String scheme = (String) params.get("scheme");
 		LOG.debug("scheme={}", scheme);
 		Face face = null;
 		try {
-			face = reqBuilder.param("remote", remote).param("scheme", scheme).param("port", port).returnAs(Face.class)
+			// no port?
+			face = reqBuilder.param("local", local).param("remote", remote).param("scheme", scheme).returnAs(Face.class)
 					.execute();
-			promise.complete(face);
+
+			promise.complete(face.toJsonObject().put("ctrlId", ctrlId));
 		} catch (JsonRpcException e) {
 			e.printStackTrace();
 			ErrorMessage error = e.getErrorMessage();
@@ -351,7 +358,6 @@ public class ForwarderVerticle extends AbstractVerticle {
 		}
 		return promise.future();
 	}
-
 
 	private Future<List<Face>> getFacesFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
