@@ -6,19 +6,26 @@ import io.vertx.core.json.JsonObject;
 
 public class Face {
 
-	private int id;
-	private String port;
-	private String local;
-	private String remote;
-	private String scheme;
-	private int vlan;
+	private int ctrlId = 0;
+	private int fwdId = 0;
+	private String port = "";
+	private String local = "";
+	private String remote = "";
+	private String scheme = "";
+	private int vlan = 1;
 
-	public Face(int id, String local, String port, String remote, String scheme) {
-		this(id, local, port, remote, scheme, 1);
+
+
+	public Face() {
 	}
 
-	public Face(int id, String local, String port, String remote, String scheme, int vlan) {
-		this.setId(id);
+	
+	public Face(int ctrlId, String local, String port, String remote, String scheme) {
+		this(ctrlId, local, port, remote, scheme, 1);
+	}
+
+	public Face(int ctrlId, String local, String port, String remote, String scheme, int vlan) {
+		this.setCtrlId(ctrlId);
 		this.setLocal(local);
 		this.setPort(port);
 		this.setRemote(remote);
@@ -27,23 +34,21 @@ public class Face {
 	}
 
 	public Face(JsonObject json) {
-		this.id = json.getInteger("id");
-		this.local = json.getString("local");
-		this.remote = json.getString("remote");
-		this.scheme = json.getString("scheme");
+		if (json.getInteger("id") != null)
+			this.ctrlId = json.getInteger("id");
+		if (json.getInteger("faceId") != null)
+			this.fwdId = json.getInteger("faceId");
+		if (json.getString("local") != null)
+			this.local = json.getString("local");
+		if (json.getString("remote") != null)
+			this.remote = json.getString("remote");
+		if (json.getString("scheme") != null)
+			this.scheme = json.getString("scheme");
 		// port and vlan don't appear in api spec
-//		this.port = json.getString("port");
+		if (json.getString("port") != null)
+			this.port = json.getString("port");
 //		this.vlan = json.getInteger("vlan");
 	}
-
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
 	/**
 	 * @return the remote
 	 */
@@ -100,9 +105,9 @@ public class Face {
 		this.vlan = vlan;
 	}
 
-	public Object getPort() {
+	public String getPort() {
 		// TODO Auto-generated method stub
-		return null;
+		return port;
 	}
 
 	/**
@@ -112,16 +117,40 @@ public class Face {
 		this.port = port;
 	}
 
+	public int getCtrlId() {
+		return ctrlId;
+	}
+
+	public void setCtrlId(int ctrlId) {
+		this.ctrlId = ctrlId;
+	}
+
+	public int getFwdId() {
+		return fwdId;
+	}
+
+	public void setFwdId(int fwdId) {
+		this.fwdId = fwdId;
+	}
+
 	public JsonObject toJsonObject() {
 		JsonObject json = new JsonObject();
-		json.put("id", id);
+		json.put("ctrlId", ctrlId);
+		json.put("fwdId", fwdId);
 		json.put("local", local);
+		json.put("port", local);
 		json.put("remote", remote);
 		json.put("scheme", scheme);
 		return json;
 	}
+	
+	
+	@Override
+	public String toString() {		
+		return this.toJsonObject().toString();
+	}
 
 	public boolean equals(Object obj) {
-		return Objects.equals(id, ((Face) obj).id);
+		return Objects.equals(ctrlId, ((Face) obj).ctrlId);
 	}
 }
