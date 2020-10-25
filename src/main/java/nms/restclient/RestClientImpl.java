@@ -3,17 +3,14 @@ package nms.restclient;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
@@ -29,13 +26,14 @@ public class RestClientImpl implements RestClient {
 	private String token = "";
 	private  Comparable<Face> typeFace = new Comparable<Face>();
 	private  Comparable<Route> typeRoute = new Comparable<Route>();
-
+	private JsonRpcHelper jsonRpcHelper;
+	
 	public RestClientImpl(Vertx vertx) {
 		WebClientOptions options = new WebClientOptions();
 		options.setSsl(true);
 		options.setPemTrustOptions(new PemTrustOptions().addCertPath("mnms-rootCA.crt.pem"));
 		this.webClient = WebClient.create(vertx, options);
-		
+		this.jsonRpcHelper = new JsonRpcHelper();
 	}
 
 	@Override
@@ -72,11 +70,12 @@ public class RestClientImpl implements RestClient {
 						HttpResponse<Buffer> response = ar.result();
 						if (response.statusCode() == 200) {
 							Configuration config = new Configuration(response.bodyAsJsonObject());
+							LOG.debug("candidate config={}",config);
 //							Configuration config = new Gson().fromJson(response.bodyAsString(), Configuration.class);
 							promise.complete(config);
 						} else {
 							if (response.statusCode() == 401) {
-								LOG.info("error: 401 - unauthorized");
+								LOG.error("error: 401 - unauthorized");
 								promise.fail("error: 401 - unauthorized");
 							}
 						}
@@ -118,26 +117,26 @@ public class RestClientImpl implements RestClient {
 		 
 			typeFace.getDifferenceOfLists(prev.getFaces(), current.getFaces())
 			.forEach(face -> {
-		    	json.add(JsonRpcHelper.makeNewFaceCommand(face));
+		    	json.add(jsonRpcHelper.makeNewFaceCommand(face));
 		    });
 			
 			typeFace.getUnionOfLists(prev.getFaces(), current.getFaces())
 			.forEach(face -> {
 		        if (!(typeFace.contains(current.getFaces(), face))) {
-		        	json.add(JsonRpcHelper.makeDestroyFaceCommand(face));
+		        	json.add(jsonRpcHelper.makeDestroyFaceCommand(face));
 		        }
 		    });
 			
 			
 			typeRoute.getDifferenceOfLists(prev.getRoutes(), current.getRoutes())
-			.forEach(face -> {
-			    	json.add(JsonRpcHelper.makeNewRouteCommand(face));
+			.forEach(route -> {
+			    	json.add(jsonRpcHelper.makeNewRouteCommand(route));
 			    });
 				
 			typeRoute.getUnionOfLists(prev.getRoutes(), current.getRoutes())
-			.forEach(face -> {
-			        if (!(typeRoute.contains(current.getRoutes(), face))) {
-			        	json.add(JsonRpcHelper.makeDestroyFaceCommand(face));
+			.forEach(route -> {
+			        if (!(typeRoute.contains(current.getRoutes(), route))) {
+			        	json.add(jsonRpcHelper.makeDestroyRouteCommand(route));
 			        }
 			 });
 			return json;
