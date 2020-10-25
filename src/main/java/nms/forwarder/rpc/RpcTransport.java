@@ -13,8 +13,8 @@ import io.vertx.core.logging.LoggerFactory;
 
 public class RpcTransport implements Transport {
 
-	private static int PORT = 36145;
-	private static String HOST = "10.0.31.84";
+	private static int PORT = 36245;
+	private static String HOST = "10.0.31.96";
 	private static String LOCALHOST = "127.0.0.1";
 
 	Logger logger = LoggerFactory.getLogger(RpcTransport.class.getName());
