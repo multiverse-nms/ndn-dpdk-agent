@@ -1,12 +1,14 @@
 package nms.rib.service;
 
+
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import net.named_data.jndn.Name;
 import nms.rib.Rib;
 import nms.rib.Route;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RibServiceImpl implements RibService {
 	private static final Logger LOG = LoggerFactory.getLogger(RibServiceImpl.class);
@@ -33,7 +35,7 @@ public class RibServiceImpl implements RibService {
 
 	@Override
 	public Future<Rib> addRoute(Route route) {
-		LOG.info("addeRoute(" + route + ")");
+		LOG.info("addRoute(" + route + ")");
 		Promise<Rib> promise = Promise.promise();
 		rib = rib.addRoute(route);
 		LOG.info("new rib " + rib);
