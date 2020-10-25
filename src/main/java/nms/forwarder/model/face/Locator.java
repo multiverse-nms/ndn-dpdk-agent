@@ -10,18 +10,18 @@ import io.vertx.core.json.JsonObject;
 
 public class Locator {
 
-	@JsonProperty("Scheme")
+	@JsonProperty("scheme")
 	private String scheme;
-	@JsonProperty("Port")
+	@JsonProperty("port")
 	private String port;
-	@JsonProperty("Local")
+	@JsonProperty("local")
 	private String local;
-	@JsonProperty("Remote")
+	@JsonProperty("remote")
 	private String remote;
 	@JsonIgnore
 	private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-	@JsonProperty("Scheme")
+	@JsonProperty("scheme")
 	public String getScheme() {
 		return scheme;
 	}
@@ -30,17 +30,17 @@ public class Locator {
 		return new JsonObject().put("scheme", scheme).put("port", port).put("local", local).put("remote", remote);
 	}
 
-	@JsonProperty("Port")
+	@JsonProperty("port")
 	public String getPort() {
 		return port;
 	}
 
-	@JsonProperty("Local")
+	@JsonProperty("local")
 	public String getLocal() {
 		return local;
 	}
 
-	@JsonProperty("Remote")
+	@JsonProperty("remote")
 	public String getRemote() {
 		return remote;
 	}
