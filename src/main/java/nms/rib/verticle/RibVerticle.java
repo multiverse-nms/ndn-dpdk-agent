@@ -63,7 +63,7 @@ public class RibVerticle extends AbstractVerticle {
 
 			if (method.equals(EventBusEndpoint.ADD_ROUTE.getName())) {
 				Name prefix = new Name((String) params.get("prefix"));
-				Number faceNumber = (Number) params.get("faceId");
+				Number faceNumber = (Number) params.get("faceFwdId");
 				int faceId = faceNumber.intValue();
 				Number originNumber = (Number) params.get("origin");
 				int origin = originNumber.intValue();
