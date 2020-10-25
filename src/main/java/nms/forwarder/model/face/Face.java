@@ -37,7 +37,9 @@ public class Face {
 	}
 	
 	public JsonObject toJsonObject() {
-		return new JsonObject().put("id", id).put("locator", locator.toJsonObject());
+		JsonObject json = locator.toJsonObject();
+		json.put("faceId", id);
+		return json;
 	}
 
 	public String toString() {
