@@ -5,8 +5,12 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import nms.restclient.service.impl.CredentialsProvider;
+
+import java.time.LocalDate;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,17 +21,13 @@ public class WebClientVerticle extends AbstractVerticle {
 
 	private static final Logger LOG = LoggerFactory.getLogger(WebClientVerticle.class);
 
-	private static final String FORWARDER_EVENTBUS_ADDRESS = null;
-
-	private static final String RIB_EVENTBUS_ADDRESS = null;
-	private static long CONFIG_PERIOD = 150000; // delay the delay in milliseconds, after which the timer will fire
+	private static long CONFIG_PERIOD = 30000; // delay the delay in milliseconds, after which the timer will fire
 	private static long STATUS_PERIOD = 100000; // 100s
 
 	private static Handler<Long> statusTask;
 	private static Handler<Long> configTask;
 
 	private ConfigurationHandler configHandler;
-	private Configuration runningConfig;
 
 	@Override
 	public void start(Promise<Void> promise) throws Exception {
@@ -35,7 +35,6 @@ public class WebClientVerticle extends AbstractVerticle {
 		LOG.info("starting " + this.getClass().getName());
 		this.restClient = getRestClient();
 		this.configHandler = new ConfigurationHandler(vertx);
-		this.runningConfig = new Configuration();
 		CredentialsProvider provider = new CredentialsProvider("data.properties");
 		this.login(provider.getUsername(), provider.getPassword()).onComplete(ar -> {
 			if (ar.succeeded()) {
@@ -59,15 +58,17 @@ public class WebClientVerticle extends AbstractVerticle {
 					@Override
 					public void handle(AsyncResult<Configuration> ar) {
 						if (ar.succeeded()) {
-							LOG.info("got new configuration from the controller");
+							LOG.info("retrieved new configuration from the controller");
 							Configuration candidate = ar.result();
 							LOG.info(candidate.toJsonObject().encodePrettily());
-							configHandler.compare(runningConfig, candidate)
-									.onComplete(new Handler<AsyncResult<Configuration>>() {
+							configHandler.compare(candidate)
+									.onComplete(new Handler<AsyncResult<List<JsonObject>>>() {
 										@Override
-										public void handle(AsyncResult<Configuration> ar) {
-											if (ar.succeeded())
+										public void handle(AsyncResult<List<JsonObject>> ar) {
+											if (ar.succeeded()) {
+												LOG.debug("COMMANDS = {}", ar.result());
 												configHandler.send(ar.result());
+											}
 										}
 									});
 						} else {
@@ -110,43 +111,6 @@ public class WebClientVerticle extends AbstractVerticle {
 
 		vertx.setTimer(1000, configTask ); // get initial config after 1 second
 	}
-
-	private void applyConfiguration(Configuration config) {
-		config.getFaces().forEach(face -> {
-			createNewFace(face);
-		});
-
-		config.getRoutes().forEach(route -> {
-			createNewRoute(route);
-		});
-
-	}
-
-	private Future<JsonObject> createNewFace(Face face) {
-		Promise<JsonObject> promise = Promise.promise();
-		vertx.eventBus().request(FORWARDER_EVENTBUS_ADDRESS, JsonRpcHelper.makeNewFaceCommand(face), ar -> {
-			if (ar.succeeded()) {
-				promise.complete((JsonObject) ar.result().body());
-			} else {
-				promise.fail(ar.cause());
-			}
-		});
-		return promise.future();
-	}
-
-	private Future<JsonObject> createNewRoute(Route route) {
-		Promise<JsonObject> promise = Promise.promise();
-		vertx.eventBus().request(RIB_EVENTBUS_ADDRESS, JsonRpcHelper.makeNewRouteCommand(route), ar -> {
-			if (ar.succeeded()) {
-				promise.complete((JsonObject) ar.result().body());
-			} else {
-				promise.fail(ar.cause());
-			}
-		});
-		return promise.future();
-	}
-
-
 		
 
 	@Override
