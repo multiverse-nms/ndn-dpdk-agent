@@ -10,6 +10,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
+import java.awt.List;
 import java.io.FileReader;
 import java.io.InputStream;
 
@@ -81,7 +82,7 @@ public class ConfigurationTest {
 	@Test
 	public void  testCompareConfig (Vertx vertx,  VertxTestContext testContext) {
 		
-		RestClientImpl RestClientImpl = new RestClientImpl(vertx);
+		RestClientImpl restClientImpl = new RestClientImpl(vertx);
 		Configuration running = new Configuration();
 		Configuration candidate = new Configuration();
 
@@ -107,7 +108,9 @@ public class ConfigurationTest {
 		
 	
 		
-		
+		restClientImpl.compareConfiguration(running, candidate).forEach(action -> {
+			System.out.println(action.encodePrettily());
+		});
 		
 	}
 	
