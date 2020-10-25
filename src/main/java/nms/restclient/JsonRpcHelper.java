@@ -32,10 +32,12 @@ public class JsonRpcHelper {
 		return batch;
 	}
 	
-	public static JsonObject makeNewFaceCommand(Face face) {
+	public  JsonObject makeNewFaceCommand(Face face) {
 		String method = "Face.Create";
 		String id = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("ctrlId", face.getCtrlId());
+		params.put("fwdId", face.getFwdId());
 		params.put("local", face.getLocal());
 		params.put("port", face.getPort());
 		params.put("remote", face.getRemote());
@@ -45,7 +47,7 @@ public class JsonRpcHelper {
 		return new JsonObject(jsonString);
 	}
 	
-	public static JsonObject makeNewRouteCommand(Route route) {
+	public  JsonObject makeNewRouteCommand(Route route) {
 		String method = "Route.Add";
 		String id = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<String, Object>();
@@ -58,14 +60,26 @@ public class JsonRpcHelper {
 		return new JsonObject(jsonString);
 	}
 
-	public static JsonObject makeDestroyFaceCommand(Face face) {
-		// TODO Auto-generated method stub
-		return null;
+	public  JsonObject makeDestroyFaceCommand(Face face) {
+		String method = "Face.Destroy";
+		String id = UUID.randomUUID().toString();
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("fwdId", face.getFwdId());
+		JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
+		String jsonString = reqOut.toString();
+		return new JsonObject(jsonString);
 	}
 
-	public static JsonObject makeDestroyFaceCommand(Route face) {
-		// TODO Auto-generated method stub
-		return null;
+	public  JsonObject makeDestroyRouteCommand(Route route) {
+		String method = "Route.Remove";
+		String id = UUID.randomUUID().toString();
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("prefix", route.getPrefix());
+		params.put("faceId", route.getFaceFwdlId()); // we need forwarder ID to remove face
+		params.put("origin", route.getOrigin());
+		JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
+		String jsonString = reqOut.toString();
+		return new JsonObject(jsonString);
 	}
 
 }
