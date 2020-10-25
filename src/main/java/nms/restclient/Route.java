@@ -1,5 +1,6 @@
 package nms.restclient;
 
+import java.nio.ByteBuffer;
 import java.util.Base64;
 
 import org.slf4j.Logger;
@@ -7,16 +8,24 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 
 import io.vertx.core.json.JsonObject;
+import net.named_data.jndn.ComponentType;
+import net.named_data.jndn.Name;
+import net.named_data.jndn.encoding.EncodingException;
+import net.named_data.jndn.encoding.tlv.Tlv;
+import net.named_data.jndn.encoding.tlv.TlvDecoder;
+import net.named_data.jndn.util.Blob;
+
 public class Route {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Route.class);
-	
+
 	private String prefix;
 	private int faceId;
+	private int faceFwdId = 0;
 	private int origin;
 	private int cost;
-	private boolean childInherit;
-	private boolean capture;
+	private boolean childInherit = true;
+	private boolean capture = false;
 
 	public Route(String prefix, int faceId, int origin, int cost, boolean childInherit, boolean capture) {
 		this.setPrefix(prefix);
@@ -26,22 +35,58 @@ public class Route {
 		this.setChildInherit(childInherit);
 		this.setCapture(capture);
 	}
+	
+	public Route(String prefix, int faceId, int origin, int cost) {
+		this.setPrefix(prefix);
+		this.setFaceId(faceId);
+		this.setOrigin(origin);
+		this.setCost(cost);
+		this.setChildInherit(true);
+		this.setCapture(false);
+	}
 
+	// TODO: crash higher up when prefix is invalid
 	public Route(JsonObject json) {
-		LOG.debug("decodedPrefix {}", json.getString("prefix"));
-		String decodedPrefix =  decodePrefix(json.getString("prefix"));
-		LOG.debug("decodedPrefix {}", decodedPrefix);
+		String decodedPrefix = decodePrefix(json.getString("prefix"));
 		this.prefix = decodedPrefix;
 		this.faceId = json.getInteger("faceId");
 		this.origin = json.getInteger("origin");
 		this.cost = json.getInteger("cost");
 	}
 
-	private String decodePrefix(String prefix) {
-		LOG.debug("decodePrefix({})", prefix);
-		byte[] decodedBytes = Base64.getUrlDecoder().decode(prefix);
-		String decodedPrefix = new String(decodedBytes);
-		return decodedPrefix;
+	private String decodePrefix(String base64Encoded) {
+		LOG.debug("decodePrefix({})", base64Encoded);
+		byte[] base64Decoded = Base64.getDecoder().decode(base64Encoded);
+		ByteBuffer buffer = ByteBuffer.wrap(base64Decoded);
+		TlvDecoder tlvDecoder = new TlvDecoder(buffer);
+		Name name = new Name();
+		try {
+			while (tlvDecoder.getOffset() < base64Decoded.length) {
+				name.append(decodeNameComponent(tlvDecoder, true));
+			}
+		} catch (Exception e) {
+			LOG.error(e.toString());
+		}
+		LOG.debug("decodedPrefix = {}", name.toUri());
+		return name.toUri();
+	}
+
+	private Name.Component decodeNameComponent(TlvDecoder decoder, boolean copy) throws EncodingException {
+		int savePosition = decoder.getOffset();
+		int type = decoder.readVarNumber();
+		// Restore the position.
+		decoder.seek(savePosition);
+
+		Blob value = new Blob(decoder.readBlobTlv(type), copy);
+		if (type == Tlv.ImplicitSha256DigestComponent)
+			return Name.Component.fromImplicitSha256Digest(value);
+		else if (type == Tlv.ParametersSha256DigestComponent)
+			return Name.Component.fromParametersSha256Digest(value);
+		else if (type == Tlv.NameComponent)
+			return new Name.Component(value);
+		else
+			// Unrecognized type code.
+			return new Name.Component(value, ComponentType.OTHER_CODE, type);
 	}
 
 	/**
@@ -128,15 +173,55 @@ public class Route {
 		this.capture = capture;
 	}
 
+	public int getFaceFwdlId() {
+		return faceFwdId;
+	}
+
+	public void setFaceFwdId(int faceFwdId) {
+		this.faceFwdId = faceFwdId;
+	}
+
 	public JsonObject toJsonObject() {
 		JsonObject json = new JsonObject();
 		json.put("prefix", prefix);
 		json.put("faceId", faceId);
+		json.put("faceFwdId", faceFwdId);
 		json.put("origin", origin);
 		json.put("cost", cost);
 		return json;
 	}
-	public boolean equals(Object obj) {
-		return Objects.equals(faceId, ((Route) obj).faceId);
+	
+	
+	@Override
+	public String toString() {
+		return this.toJsonObject().toString();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+//		// self check
+//		if (this == o)
+//			return true;
+//		// null check
+//		if (o == null)
+//			return false;
+//		// type check and cast
+//		if (getClass() != o.getClass())
+//			return false;
+//		Route route = (Route) o;
+		// field comparison=
+		return Objects.equals(faceId, ((Route) o).faceId) && Objects.equals(prefix, ((Route) o).prefix) && Objects.equals(origin, ((Route) o).origin)  ;
+	}
+
+	public static void main(String[] args) {
+		JsonObject json = new JsonObject()
+				.put("prefix", "CARuaXN0CANnb3Y=")
+				.put("faceId", 3000)
+				.put("cost" , 0)
+				.put("origin" , 1);
+		
+		Route route = new Route(json);
+		String value = route.decodePrefix("CARuaXN0CANnb3Y=");
+		System.out.print(value);
 	}
 }
