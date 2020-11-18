@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 public class WebSocketServerVerticle extends AbstractVerticle {
 
-	private static int PORT = 9001;
+	private static int PORT = 9000;
 	private static final Logger LOG = LoggerFactory.getLogger(WebSocketServerVerticle.class);
 	private static String forwarderVerticleAddress = VerticleAdress.forwarder_verticle.getAdress();
 	private static String ribVerticleAddress = VerticleAdress.rib_verticle.getAdress();
