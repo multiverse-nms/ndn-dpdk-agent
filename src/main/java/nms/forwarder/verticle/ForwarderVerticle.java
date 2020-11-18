@@ -330,7 +330,11 @@ public class ForwarderVerticle extends AbstractVerticle {
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
 		Map<String, Object> params = req.getNamedParams();
 		Number crtlIdNumber = (Number) params.get("ctrlId");
-		int ctrlId = crtlIdNumber.intValue();
+		int ctrlId = 0;
+		
+		if (crtlIdNumber != null)
+			ctrlId = crtlIdNumber.intValue();
+		
 		LOG.debug("ctrlId={}", ctrlId);
 		String local = (String) params.get("local");
 		LOG.debug("local={}", local);

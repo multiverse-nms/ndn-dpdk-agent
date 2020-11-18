@@ -21,7 +21,8 @@ public class RestClientImpl implements RestClient {
 
 	private WebClient webClient;
 	private static int PORT = 8787;
-	private static String HOST = "mnms.controller";
+	private static String HOST = "10.0.31.26";
+	private static String LOCALHOST = "localhost";
 	private static final Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
 	private String token = "";
 	private  Comparable<Face> typeFace = new Comparable<Face>();
@@ -31,6 +32,8 @@ public class RestClientImpl implements RestClient {
 	public RestClientImpl(Vertx vertx) {
 		WebClientOptions options = new WebClientOptions();
 		options.setSsl(true);
+		options.setTrustAll(true);
+		// config
 		options.setPemTrustOptions(new PemTrustOptions().addCertPath("mnms-rootCA.crt.pem"));
 		this.webClient = WebClient.create(vertx, options);
 		this.jsonRpcHelper = new JsonRpcHelper();
