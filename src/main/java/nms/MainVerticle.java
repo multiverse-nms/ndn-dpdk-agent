@@ -46,8 +46,11 @@ public class MainVerticle extends AbstractVerticle {
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
-		Vertx vertx = Vertx.vertx(new VertxOptions()
-				.setAddressResolverOptions(new AddressResolverOptions().setHostsValue(buffer)));
+		VertxOptions vertxOptions = new VertxOptions();
+		if (buffer.length() != 0) {
+			vertxOptions.setAddressResolverOptions(new AddressResolverOptions().setHostsValue(buffer));
+		}
+		Vertx vertx = Vertx.vertx(vertxOptions);
 		vertx.deployVerticle(new MainVerticle());
 	}
 
@@ -85,6 +88,7 @@ public class MainVerticle extends AbstractVerticle {
 
 	private static Buffer resolveHosts(String filename) throws IOException, URISyntaxException {
 		URL res = MainVerticle.class.getClassLoader().getResource(filename);
+		LOG.info("file path = {}", res);
 		File file = Paths.get(res.toURI()).toFile();
 		String absolutePath = file.getAbsolutePath();
 		DataInputStream reader = new DataInputStream(new FileInputStream(absolutePath));
@@ -95,6 +99,7 @@ public class MainVerticle extends AbstractVerticle {
 			reader.read(bytes);
 			reader.close();
 		}
+		LOG.info("bytes = {}", bytes);
 		return Buffer.buffer(bytes);
 	}
 
