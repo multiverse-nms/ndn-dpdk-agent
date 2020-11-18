@@ -36,6 +36,7 @@ public class WebClientVerticle extends AbstractVerticle {
 		this.restClient = getRestClient();
 		this.configHandler = new ConfigurationHandler(vertx);
 		CredentialsProvider provider = new CredentialsProvider("data.properties");
+		LOG.info("Credentials: {}/{}",provider.getUsername(),provider.getPassword());
 		this.login(provider.getUsername(), provider.getPassword()).onComplete(ar -> {
 			if (ar.succeeded()) {
 				LOG.info("agent connected succesfully");
@@ -73,11 +74,13 @@ public class WebClientVerticle extends AbstractVerticle {
 									});
 						} else {
 							LOG.info("unable to retrive the configuration: " + ar.result());
+//							promise.fail("unable to retrive the configuration: " + ar.result());
 						}
 					}
 				});
 			} else {
 				LOG.info("unable to login, reason: " + ar.cause());
+//				promise.fail("unable to login, reason: " + ar.cause());
 			}
 		});
 	}
