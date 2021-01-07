@@ -30,12 +30,11 @@ public class RestClientImpl implements RestClient {
 	private JsonRpcHelper jsonRpcHelper;
 	
 	public RestClientImpl(Vertx vertx) {
-		WebClientOptions options = new WebClientOptions();
-		options.setSsl(true);
-		options.setTrustAll(true);
-		// config
-		options.setPemTrustOptions(new PemTrustOptions().addCertPath("mnms-rootCA.crt.pem"));
-		this.webClient = WebClient.create(vertx, options);
+		// WebClientOptions options = new WebClientOptions();
+		// options.setSsl(true);
+		// options.setTrustAll(true);
+		// options.setPemTrustOptions(new PemTrustOptions().addCertPath("mnms-rootCA.crt.pem"));
+		this.webClient = WebClient.create(vertx);
 		this.jsonRpcHelper = new JsonRpcHelper();
 	}
 
