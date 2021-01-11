@@ -11,9 +11,11 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
 
 public class RestClientImpl implements RestClient {
 
@@ -35,7 +37,17 @@ public class RestClientImpl implements RestClient {
 	public RestClientImpl(Vertx vertx, JsonObject config) {	
 		this.controllerHost = config.getString("http.host", DEFAULT_HTTP_HOST);
 		this.controllerPort = config.getInteger("http.port", DEFAULT_HTTP_PORT);
-		this.webClient = WebClient.create(vertx);
+		
+		WebClientOptions options = new WebClientOptions();
+		options.setSsl(true);
+		
+		// hostname verification
+		options.setVerifyHost(false);
+		
+		// trust Multiverse CA
+		options.setPemTrustOptions(new PemTrustOptions().addCertPath("/opt/data/ca/MultiverseRootCA.crt.pem"));
+		
+		this.webClient = WebClient.create(vertx, options);
 		this.jsonRpcHelper = new JsonRpcHelper();
 	}
 

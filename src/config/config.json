@@ -1,7 +1,7 @@
 {
 	"forwarder": {
-		"rpc.host": "10.0.31.98",
-		"rpc.port": 6345
+		"rpc.host": "localhost",
+		"rpc.port": 30130
 	},
 	"agent": {
 		"ws.port": 9000

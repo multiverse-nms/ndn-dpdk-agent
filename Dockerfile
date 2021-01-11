@@ -6,8 +6,8 @@ RUN mvn clean install
 
 # Package stage
 FROM java:8-jre
-COPY --from=build /home/agent/target/nms-agent-0.0.1-SNAPSHOT-fat.jar /app/agent/nms-agent.jar
+COPY --from=build /home/agent/target/nms-agent-0.0.1-SNAPSHOT-fat.jar /opt/agent/nms-agent.jar
 EXPOSE 9000
-WORKDIR /app/agent
+WORKDIR /opt/agent
 ENTRYPOINT ["sh", "-c"]
-CMD ["java -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory -jar nms-agent.jar -conf /data/config.json"]
+CMD ["java -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory -jar nms-agent.jar -conf /opt/data/config.json"]
