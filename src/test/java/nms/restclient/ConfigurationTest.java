@@ -80,14 +80,11 @@ public class ConfigurationTest {
 	}
 	
 	@Test
-	public void  testCompareConfig (Vertx vertx,  VertxTestContext testContext) {
-		
-		RestClientImpl restClientImpl = new RestClientImpl(vertx);
+	public void  testCompareConfig (Vertx vertx,  VertxTestContext testContext) {		
+		RestClientImpl restClientImpl = new RestClientImpl(vertx, new JsonObject());
 		Configuration running = new Configuration();
 		Configuration candidate = new Configuration();
 
-		
-		
 		Face face = new Face(111, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
 		Face face1 = new Face(112, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
 		Face face2 = new Face(115, "a1.a1.a1.a1", "b1.b1.b1.b1", "eth0","scheme", 12);
@@ -102,16 +99,11 @@ public class ConfigurationTest {
 		Route route = new Route("/a/b/c", 1101, 0, 10, true, false);
 		Route route1 = new Route("/a/b/c", 1101, 0, 10, true, false);
 		
-
 		running.addRoute(route);
 		candidate.addRoute(route1);
 		
-	
-		
 		restClientImpl.compareConfiguration(running, candidate).forEach(action -> {
 			System.out.println(action.encodePrettily());
-		});
-		
-	}
-	
+		});	
+	}	
 }
