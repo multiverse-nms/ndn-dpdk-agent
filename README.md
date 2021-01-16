@@ -27,7 +27,7 @@ To run properly, the agent needs a configuration file and the Multiverse root CA
 Create the agent configuration profile by issuing the following commands:
 ```bash
 mkdir my-agent ; cd my-agent ; mkdir ca
-curl https://raw.githubusercontent.com/multiverse-nms/ndn-dpdk-agent/demo/src/config/config.json -o config.json
+curl https://raw.githubusercontent.com/multiverse-nms/ndn-dpdk-agent/master/src/config/config.json -o config.json
 ```
 
 Update the `config.json` file to fit the NDN-DPDK forwarder and Multiverse controller parameters (e.g., host and port).
