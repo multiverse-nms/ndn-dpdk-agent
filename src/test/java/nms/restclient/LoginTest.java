@@ -16,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import com.xebialabs.restito.server.StubServer;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 
@@ -46,11 +45,8 @@ public class LoginTest {
 		
 		whenHttp(server).match(post("/login/agent"), withPostBodyContaining("\"username\":\"omar\",\"password\":\"omar@1234\"")).then(resourceContent("token.json"));
 		
-		// EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");
-		JsonObject controller = new JsonObject()
-				.put("http.host", "localhost")
-				.put("http.port", server.getPort());
-		new RestClientImpl(vertx, controller).login(user, pass).onComplete(ar -> {
+		EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");
+		new RestClientImpl(vertx).login(user, pass).onComplete(ar -> {
 			if (ar.failed()) {
 				testContext.failNow(ar.cause());
 			} else {

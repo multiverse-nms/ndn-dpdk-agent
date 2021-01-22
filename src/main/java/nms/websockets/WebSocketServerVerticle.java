@@ -19,28 +19,23 @@ import org.slf4j.LoggerFactory;
 
 public class WebSocketServerVerticle extends AbstractVerticle {
 
-	private static int DEFAULT_PORT = 9000;
+	private static int PORT = 9000;
 	private static final Logger LOG = LoggerFactory.getLogger(WebSocketServerVerticle.class);
 	private static String forwarderVerticleAddress = VerticleAdress.forwarder_verticle.getAdress();
 	private static String ribVerticleAddress = VerticleAdress.rib_verticle.getAdress();
 	private Map<String, String> verticlesMap = new HashMap<>();
 	
-	HttpServer wsServer = null;
-	
-	public void start(Promise<Void> promise) throws Exception {
-		super.start(promise);
-		LOG.info("starting " + this.getClass().getName() + " verticle");
-		LOG.info("Config: " + config().getJsonObject("agent").encodePrettily());
-
+	public void start(Promise<Void> promise) {
 		initVerticlesMap();
-		startServer();
+		startServer(vertx, promise);
+		LOG.info("websocket server started and listening on port " + config().getInteger("ws.port", PORT));
 	}
 
-	private void startServer() {
-		int wsPort = config().getJsonObject("agent").getInteger("ws.port", DEFAULT_PORT);
-		
-		wsServer = vertx.createHttpServer();
-		wsServer.webSocketHandler(new Handler<ServerWebSocket>() {
+
+	private void startServer(Vertx vertx, Promise<Void> promise) {
+		HttpServer server = vertx.createHttpServer();
+		LOG.info("starting websocket server");
+		server.webSocketHandler(new Handler<ServerWebSocket>() {
 			@Override
 			public void handle(ServerWebSocket socket) {
 				socket.textMessageHandler(msg -> {
@@ -61,8 +56,8 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 					});
 				});
 			}
-		}).listen(wsPort);
-		LOG.info("websocket server listening on port " + wsPort);
+		}).listen(config().getInteger("ws.port", PORT));
+		promise.complete();
 	}
 
 	private Future<JsonObject> sendToVerticle(String address, JsonObject json) {
@@ -77,9 +72,7 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 		return promise.future();
 	}
 
-	public void stop(Promise<Void> promise) throws Exception {
-		super.stop();
-		wsServer.close(promise);
+	public void stop(Promise<Void> startFuture) {
 	}
 	
 	private void initVerticlesMap() {

@@ -30,21 +30,11 @@ import org.slf4j.LoggerFactory;
 
 public class ForwarderVerticle extends AbstractVerticle {
 
-	private String rpcHost = "";
-	private int rpcPort = 0;
 	private static Logger LOG = LoggerFactory.getLogger(ForwarderVerticle.class.getName());
 
 	@Override
 	public void start(Promise<Void> promise) {
-		// TODO: check config content
-		
-		LOG.info("starting " + this.getClass().getName() + " verticle");
-		LOG.info("Config: " + config().getJsonObject("forwarder").encodePrettily());
-		
-		// setup RPC
-		rpcHost = config().getJsonObject("forwarder").getString("rpc.host");
-		rpcPort = config().getJsonObject("forwarder").getInteger("rpc.port");
-		
+		LOG.info("starting verticle");
 		// setup EventBus
 		this.consumeEventBus(VerticleAdress.forwarder_verticle.getAdress(), promise);
 	}
@@ -190,7 +180,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<List<PortInfo>> getPortsFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<List<PortInfo>> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
@@ -214,7 +204,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<List<String>> getFibFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<List<String>> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
@@ -238,7 +228,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<FibEntry> insertFibFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<FibEntry> promise = Promise.promise();
 		Map<String, Object> params = req.getNamedParams();
@@ -264,7 +254,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<String> eraseFibFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<String> promise = Promise.promise();
 
@@ -287,7 +277,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<Integer> destroyFaceFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<Integer> promise = Promise.promise();
 
@@ -311,7 +301,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<Version> getVersioFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<Version> promise = Promise.promise();
 		Version version;
@@ -333,11 +323,10 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<JsonObject> createFaceFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 
 		Promise<JsonObject> promise = Promise.promise();
-		
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
 		Map<String, Object> params = req.getNamedParams();
 		Number crtlIdNumber = (Number) params.get("ctrlId");
@@ -355,7 +344,6 @@ public class ForwarderVerticle extends AbstractVerticle {
 		LOG.debug("remote={}", remote);
 		String scheme = (String) params.get("scheme");
 		LOG.debug("scheme={}", scheme);
-		
 		Face face = null;
 		try {
 			// no port?
@@ -372,12 +360,11 @@ public class ForwarderVerticle extends AbstractVerticle {
 			}
 			promise.fail(error.getMessage());
 		}
-		
 		return promise.future();
 	}
 
 	private Future<List<Face>> getFacesFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<List<Face>> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
@@ -401,7 +388,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<FaceData> getFaceFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<FaceData> promise = Promise.promise();
 
@@ -425,8 +412,8 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	@Override
-	public void stop(Promise<Void> promise) throws Exception {
-		super.stop(promise);
+	public void stop() {
+		LOG.info("stopping verticle");
 	}
 
 	public static String getEventBusAddress() {

@@ -7,8 +7,8 @@ import io.vertx.ext.web.client.WebClient;
 public class RequestBuilder {
 
 	private WebClient webClient;
-	private int port = 0;
-	private String host = "";
+	private int port = 8787;
+	private String host = "mnms.controller";
 	private String token = "";
 
 	public RequestBuilder(WebClient webClient, String token) {
