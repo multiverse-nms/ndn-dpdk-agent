@@ -11,7 +11,8 @@ public enum EventBusEndpoint {
 	ADD_ROUTE("Route.Add"),
 	REMOVE_ROUTE("Route.Remove"),
 	LIST_FIB("Fib.List"),
-	// can only be used by RIB verticle
+	APP_FACE_CREATE("Face.Create"),
+	
 	INSERT_FIB("Fib.Insert"),
 	ERASE_FIB("Fib.Erase");
 	;

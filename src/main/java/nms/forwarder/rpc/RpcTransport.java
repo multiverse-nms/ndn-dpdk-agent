@@ -13,8 +13,8 @@ import io.vertx.core.logging.LoggerFactory;
 
 public class RpcTransport implements Transport {
 
-	private static int PORT = 6345;
-	private static String HOST = "10.0.31.99";
+	private static int PORT = 30230;
+	private static String HOST = "10.0.31.84";
 	private static String LOCALHOST = "127.0.0.1";
 
 	Logger logger = LoggerFactory.getLogger(RpcTransport.class.getName());
@@ -24,7 +24,7 @@ public class RpcTransport implements Transport {
 		String response = "";
 		try {
 			// create client socket, connect to server
-			Socket clientSocket = new Socket(HOST, PORT);
+			Socket clientSocket = new Socket(LOCALHOST, PORT);
 			// create input stream attached to socket
 			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			// create output stream attached to socket
