@@ -1,8 +1,10 @@
 package nms.forwarder.verticle;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.github.arteam.simplejsonrpc.client.JsonRpcClient;
 import com.github.arteam.simplejsonrpc.client.builder.RequestBuilder;
@@ -18,8 +20,10 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import nms.VerticleAdress;
 import nms.forwarder.api.EventBusEndpoint;
+import nms.forwarder.model.face.EtherFace;
 import nms.forwarder.model.face.Face;
 import nms.forwarder.model.face.FaceData;
+import nms.forwarder.model.face.MemifFace;
 import nms.forwarder.model.fib.FibEntry;
 import nms.forwarder.model.version.Version;
 import nms.forwarder.model.port.PortInfo;
@@ -30,33 +34,30 @@ import org.slf4j.LoggerFactory;
 
 public class ForwarderVerticle extends AbstractVerticle {
 
-	private String rpcHost = "";
-	private int rpcPort = 0;
 	private static Logger LOG = LoggerFactory.getLogger(ForwarderVerticle.class.getName());
+	static Map<String, List<Object>> storedFaces = new HashMap<>();
+	static String ClientId;
 
 	@Override
 	public void start(Promise<Void> promise) {
-		// TODO: check config content
-		
-		LOG.info("starting " + this.getClass().getName() + " verticle");
-		LOG.info("Config: " + config().getJsonObject("forwarder").encodePrettily());
-		
-		// setup RPC
-		rpcHost = config().getJsonObject("forwarder").getString("rpc.host");
-		rpcPort = config().getJsonObject("forwarder").getInteger("rpc.port");
-		
+		LOG.info("starting verticle");
 		// setup EventBus
 		this.consumeEventBus(VerticleAdress.forwarder_verticle.getAdress(), promise);
 	}
 
 	private void consumeEventBus(String address, Promise<Void> promise) {
+
 		vertx.eventBus().consumer(address, (message) -> {
 			JSONRPC2Request req = null;
 			String method = "";
 			String body = message.body().toString();
+			JsonObject json = new JsonObject(body);
+			ClientId = json.getString("ClientId");
 
 			try {
+
 				req = JSONRPC2Request.parse(body);
+				System.out.println("req:" + req);
 			} catch (JSONRPC2ParseException e) {
 				LOG.error("error while parsing the json rpc request {}", e.getMessage());
 				return;
@@ -79,12 +80,22 @@ public class ForwarderVerticle extends AbstractVerticle {
 				this.createFaceFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
 						LOG.debug("Face={}", ar.result());
+						List<Integer> faces = new ArrayList<Integer>();
+						faces.add(ar.result().getInteger("id"));
+						List<Object> created = new ArrayList<Object>();
+						created.add(0, faces);
+						created.add(1, ar.result().getBoolean("facescope"));
+						storedFaces.put(ClientId, created);
 						message.reply(ar.result());
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
 					}
 				});
 
+			}
+
+			if (method.equals(EventBusEndpoint.On_Client_Disconnect.getName())) {
+				this.OnClientDisconnect(req);
 			}
 
 			if (method.equals(EventBusEndpoint.DESTROY_FACE.getName())) {
@@ -190,7 +201,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<List<PortInfo>> getPortsFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<List<PortInfo>> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
@@ -214,7 +225,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<List<String>> getFibFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<List<String>> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
@@ -238,11 +249,12 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<FibEntry> insertFibFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<FibEntry> promise = Promise.promise();
 		Map<String, Object> params = req.getNamedParams();
-		List<Integer> nexthops = (ArrayList) params.get("Nexthops");
+		@SuppressWarnings("unchecked")
+		List<Integer> nexthops = (ArrayList<Integer>) params.get("Nexthops");
 		String name = (String) params.get("Name");
 		if (nexthops.size() != 0) {
 			try {
@@ -264,7 +276,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<String> eraseFibFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<String> promise = Promise.promise();
 
@@ -287,13 +299,15 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<Integer> destroyFaceFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<Integer> promise = Promise.promise();
 
 		Map<String, Object> params = req.getNamedParams();
-		Number faceNumber = (Number) params.get("fwdId");
+		Number faceNumber = (Number) params.get("Id");
+		LOG.debug("faceNumber", faceNumber);
 		int faceId = faceNumber.intValue();
+		LOG.debug("faceId", faceId);
 		LOG.info("attempt to destroy face with ID " + faceId);
 		try {
 			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("id", faceId).execute();
@@ -311,7 +325,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<Version> getVersioFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<Version> promise = Promise.promise();
 		Version version;
@@ -333,51 +347,82 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<JsonObject> createFaceFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
-		JsonRpcClient client = new JsonRpcClient(tp);
 
+		RpcTransport tp = new RpcTransport();
+		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<JsonObject> promise = Promise.promise();
-		
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).method(req.getMethod());
 		Map<String, Object> params = req.getNamedParams();
 		Number crtlIdNumber = (Number) params.get("ctrlId");
 		int ctrlId = 0;
-		
+
 		if (crtlIdNumber != null)
 			ctrlId = crtlIdNumber.intValue();
-		
-		LOG.debug("ctrlId={}", ctrlId);
-		String local = (String) params.get("local");
-		LOG.debug("local={}", local);
-//		String port = (String) params.get("port");
-//		LOG.debug("port={}", port);
-		String remote = (String) params.get("remote");
-		LOG.debug("remote={}", remote);
 		String scheme = (String) params.get("scheme");
 		LOG.debug("scheme={}", scheme);
-		
-		Face face = null;
-		try {
-			// no port?
-			face = reqBuilder.param("local", local).param("remote", remote).param("scheme", scheme).returnAs(Face.class)
-					.execute();
 
-			promise.complete(face.toJsonObject().put("ctrlId", ctrlId));
-		} catch (JsonRpcException e) {
-			e.printStackTrace();
-			ErrorMessage error = e.getErrorMessage();
+		switch (scheme) {
+		case "ether":
 
-			if (error.getCode() == -32602) {
-				LOG.error("invalid parameter: " + error.getMessage());
+			LOG.debug("ctrlId={}", ctrlId);
+			String local = (String) params.get("local");
+			LOG.debug("local={}", local);
+			String remote = (String) params.get("remote");
+			LOG.debug("remote={}", remote);
+
+			try {
+
+				EtherFace face = reqBuilder.param("local", local).param("remote", remote).param("scheme", scheme)
+						.returnAs(EtherFace.class).execute();
+
+				promise.complete(face.toJsonObject().put("ctrlId", ctrlId));
+
+			} catch (JsonRpcException e) {
+				e.printStackTrace();
+				ErrorMessage error = e.getErrorMessage();
+
+				if (error.getCode() == -32602) {
+					LOG.error("invalid parameter: " + error.getMessage());
+				}
+				promise.fail(error.getMessage());
 			}
-			promise.fail(error.getMessage());
+			break;
+
+		case "memif":
+			Number idNumber = (Number) params.get("id");
+			Integer id = idNumber.intValue();
+			LOG.debug("id={}", id);
+
+			String socketName = (String) params.get("socketName");
+			LOG.debug("socketName={}", socketName);
+			boolean facescope = (boolean) params.get("facescope");
+			LOG.debug("facescope={}", facescope);
+
+			try {
+
+				MemifFace face = reqBuilder.param("id", id).param("socketName", socketName).param("scheme", scheme)
+						.returnAs(MemifFace.class).execute();
+
+				promise.complete(face.toJsonObject().put("facescope", facescope));
+
+			} catch (JsonRpcException e) {
+				e.printStackTrace();
+				ErrorMessage error = e.getErrorMessage();
+
+				if (error.getCode() == -32602) {
+					LOG.error("invalid parameter: " + error.getMessage());
+				}
+				promise.fail(error.getMessage());
+			}
+
+			break;
 		}
-		
+
 		return promise.future();
 	}
 
 	private Future<List<Face>> getFacesFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<List<Face>> promise = Promise.promise();
 		RequestBuilder<Object> reqBuilder = client.createRequest().id(req.getID().toString()).param("_", 0)
@@ -401,7 +446,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 	}
 
 	private Future<FaceData> getFaceFuture_JsonRPC(JSONRPC2Request req) {
-		RpcTransport tp = new RpcTransport(rpcHost, rpcPort);
+		RpcTransport tp = new RpcTransport();
 		JsonRpcClient client = new JsonRpcClient(tp);
 		Promise<FaceData> promise = Promise.promise();
 
@@ -424,9 +469,55 @@ public class ForwarderVerticle extends AbstractVerticle {
 		return promise.future();
 	}
 
+	private void OnClientDisconnect(JSONRPC2Request req) {
+		Map<String, Object> params = req.getNamedParams();
+		String clientId = (String) params.get("clientId");
+
+		if (storedFaces.containsKey(clientId)) {
+
+			List<Object> object = storedFaces.get(clientId);
+			boolean facescope = (boolean) object.get(1);
+			@SuppressWarnings("unchecked")
+			List<Integer> FaceId = (List<Integer>) object.get(0);
+
+			LOG.debug("facescope={}", facescope);
+			LOG.debug("faceid={}", FaceId);
+
+			FaceId.forEach(l -> {
+				if (facescope == true) {
+					String method = "Face.Destroy";
+					String id = UUID.randomUUID().toString();
+					params.put("Id", l);
+					JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
+					String jsonString = reqOut.toString();
+					JsonObject json = new JsonObject(jsonString);
+					try {
+						JSONRPC2Request request = JSONRPC2Request.parse(json.toString());
+						this.destroyFaceFuture_JsonRPC(request).onComplete(ar -> {
+							if (ar.succeeded()) {
+								LOG.debug("FaceId={}", ar.result());
+							}
+
+							else {
+								LOG.debug("Something went wrong");
+							}
+
+						});
+					} catch (JSONRPC2ParseException e) {
+
+						e.printStackTrace();
+					}
+				} else {
+					LOG.debug("Face can't be destroyed");
+				}
+
+			});
+		}
+	}
+
 	@Override
-	public void stop(Promise<Void> promise) throws Exception {
-		super.stop(promise);
+	public void stop() {
+		LOG.info("stopping verticle");
 	}
 
 	public static String getEventBusAddress() {
