@@ -79,7 +79,6 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 		verticlesMap.put(EventBusEndpoint.LIST_FACES.getName(), forwarderVerticleAddress);
 		verticlesMap.put(EventBusEndpoint.GET_FACE.getName(), forwarderVerticleAddress);
 		verticlesMap.put(EventBusEndpoint.CREATE_FACE.getName(), forwarderVerticleAddress);
-		verticlesMap.put(EventBusEndpoint.APP_FACE_CREATE.getName(), forwarderVerticleAddress);
 		verticlesMap.put(EventBusEndpoint.DESTROY_FACE.getName(), forwarderVerticleAddress);
 		verticlesMap.put(EventBusEndpoint.LIST_PORTS.getName(), forwarderVerticleAddress);
 		verticlesMap.put(EventBusEndpoint.LIST_FIB.getName(), forwarderVerticleAddress);

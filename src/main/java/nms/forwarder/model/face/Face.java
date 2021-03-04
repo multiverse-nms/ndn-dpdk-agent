@@ -1,22 +1,18 @@
 package nms.forwarder.model.face;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.vertx.core.json.JsonObject;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Face {
-
 	Integer id;
 
-	@JsonProperty("Locator")
-	Object locator;
-
+	private Locator locator;
 	@JsonIgnore
 	private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
@@ -30,11 +26,24 @@ public class Face {
 		this.id = id;
 	}
 
+	@JsonProperty("Locator")
+	public Locator getLocator() {
+		return locator;
+	}
+
+	@JsonProperty("Locator")
+	public void setLocator(Locator locator) {
+		this.locator = locator;
+	}
+	
 	public JsonObject toJsonObject() {
-		return new JsonObject().put("faceId", id).put("Locator", locator);
+		JsonObject json = locator.toJsonObject();
+		json.put("faceId", id);
+		return json;
 	}
 
 	public String toString() {
 		return this.toJsonObject().encodePrettily();
 	}
+
 }

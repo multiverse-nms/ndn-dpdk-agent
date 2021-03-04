@@ -18,10 +18,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import nms.VerticleAdress;
 import nms.forwarder.api.EventBusEndpoint;
-import nms.forwarder.model.face.EtherFace;
 import nms.forwarder.model.face.Face;
 import nms.forwarder.model.face.FaceData;
-import nms.forwarder.model.face.MemifFace;
 import nms.forwarder.model.fib.FibEntry;
 import nms.forwarder.model.version.Version;
 import nms.forwarder.model.port.PortInfo;
@@ -71,18 +69,6 @@ public class ForwarderVerticle extends AbstractVerticle {
 				this.createFaceFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
 						LOG.debug("Face={}", ar.result());
-						message.reply(ar.result());
-					} else {
-						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
-					}
-				});
-
-			}
-			
-			if (method.equals(EventBusEndpoint.APP_FACE_CREATE.getName())) {
-				this.createFaceFuture_JsonRPC(req).onComplete(ar -> {
-					if (ar.succeeded()) {
-						LOG.debug("Memif Face={}", ar.result().getInteger("id").intValue());
 						message.reply(ar.result());
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
@@ -296,10 +282,8 @@ public class ForwarderVerticle extends AbstractVerticle {
 		Promise<Integer> promise = Promise.promise();
 
 		Map<String, Object> params = req.getNamedParams();
-		Number faceNumber = (Number) params.get("Id");
-		LOG.debug("faceNumber",faceNumber);
+		Number faceNumber = (Number) params.get("fwdId");
 		int faceId = faceNumber.intValue();
-		LOG.debug("faceId",faceId);
 		LOG.info("attempt to destroy face with ID " + faceId);
 		try {
 			client.createRequest().method(req.getMethod()).id(req.getID().toString()).param("id", faceId).execute();
@@ -350,24 +334,23 @@ public class ForwarderVerticle extends AbstractVerticle {
 		
 		if (crtlIdNumber != null)
 			ctrlId = crtlIdNumber.intValue();
-		String scheme = (String) params.get("scheme");
-		LOG.debug("scheme={}", scheme);
 		
-		switch(scheme) {
-		case "ether":
-			
 		LOG.debug("ctrlId={}", ctrlId);
 		String local = (String) params.get("local");
 		LOG.debug("local={}", local);
+//		String port = (String) params.get("port");
+//		LOG.debug("port={}", port);
 		String remote = (String) params.get("remote");
 		LOG.debug("remote={}", remote);
-		
+		String scheme = (String) params.get("scheme");
+		LOG.debug("scheme={}", scheme);
+		Face face = null;
 		try {
-			
-			EtherFace face = reqBuilder.param("local", local).param("remote", remote).param("scheme", scheme).returnAs(EtherFace.class)
+			// no port?
+			face = reqBuilder.param("local", local).param("remote", remote).param("scheme", scheme).returnAs(Face.class)
 					.execute();
 
-		promise.complete(face.toJsonObject().put("ctrlId", ctrlId));
+			promise.complete(face.toJsonObject().put("ctrlId", ctrlId));
 		} catch (JsonRpcException e) {
 			e.printStackTrace();
 			ErrorMessage error = e.getErrorMessage();
@@ -377,38 +360,8 @@ public class ForwarderVerticle extends AbstractVerticle {
 			}
 			promise.fail(error.getMessage());
 		}
-		break;
-		case "memif":
-			Number idNumber = (Number) params.get("id");
-			Integer id = idNumber.intValue();
-			LOG.debug("id={}", id);
-			
-			String socketName = (String) params.get("socketName");
-			LOG.debug("socketName={}", socketName);
-			
-			try {
-			  
-				 MemifFace face = reqBuilder.param("id", id).param("socketName", socketName).param("scheme", scheme).returnAs(MemifFace.class).execute(); 
-				 
-				 promise.complete(face.toJsonObject());
-				
-				 LOG.debug("face={}", face.toJsonObject());
-			     } catch (JsonRpcException e) {
-			    	 e.printStackTrace();
-			    	 ErrorMessage error = e.getErrorMessage();
-
-				if (error.getCode() == -32602) {
-					LOG.error("invalid parameter: " + error.getMessage());
-				}
-				promise.fail(error.getMessage());
-			}
-		 
-			break;
-		}
 		return promise.future();
 	}
-	
-	
 
 	private Future<List<Face>> getFacesFuture_JsonRPC(JSONRPC2Request req) {
 		RpcTransport tp = new RpcTransport();
