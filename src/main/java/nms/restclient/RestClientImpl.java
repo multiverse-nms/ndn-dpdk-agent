@@ -19,55 +19,71 @@ import io.vertx.ext.web.client.WebClientOptions;
 
 public class RestClientImpl implements RestClient {
 
+	private static String DEFAULT_HTTP_HOST = "localhost";
+	private static int DEFAULT_HTTP_PORT = 8787;
+	
+	private String controllerHost = "";
+	private int controllerPort = 0;
 	private WebClient webClient;
-	private static int PORT = 8787;
-	private static String HOST = "10.0.31.26";
-	private static String LOCALHOST = "localhost";
-	private static final Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
 	private String token = "";
+	
 	private  Comparable<Face> typeFace = new Comparable<Face>();
 	private  Comparable<Route> typeRoute = new Comparable<Route>();
+	
 	private JsonRpcHelper jsonRpcHelper;
 	
-	public RestClientImpl(Vertx vertx) {
+	private static final Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
+	
+	public RestClientImpl(Vertx vertx, JsonObject config) {	
+		this.controllerHost = config.getString("http.host", DEFAULT_HTTP_HOST);
+		this.controllerPort = config.getInteger("http.port", DEFAULT_HTTP_PORT);
+		
 		WebClientOptions options = new WebClientOptions();
 		options.setSsl(true);
-		options.setTrustAll(true);
-		// config
-		options.setPemTrustOptions(new PemTrustOptions().addCertPath("mnms-rootCA.crt.pem"));
+		
+		// hostname verification
+		options.setVerifyHost(false);
+		
+		// trust Multiverse CA
+		options.setPemTrustOptions(new PemTrustOptions().addCertPath("/opt/data/ca/MultiverseRootCA.crt.pem"));
+		
 		this.webClient = WebClient.create(vertx, options);
 		this.jsonRpcHelper = new JsonRpcHelper();
 	}
 
 	@Override
-	public Future<String> login(String user, String password) {
+	public Future<String> login(String username, String password) {
 		Promise<String> promise = Promise.promise();
-		RequestBuilder rb = new RequestBuilder(this.webClient, this.token).setPort(PORT).setHost(HOST);
-		rb.makeAgentLoginRequest().sendJsonObject(new JsonObject().put("username", user).put("password", password),
-				ar -> {
-					if (ar.succeeded()) {
-						HttpResponse<Buffer> response = ar.result();
-						if (response.statusCode() == 200) {
-							JsonObject body = response.bodyAsJsonObject();
-							String token = body.getString("token");
-							promise.complete(token);
-						} else {
-							if (response.statusCode() == 401) {
-								LOG.info("error: 401 - unauthorized");
-								promise.fail("error: 401 - unauthorized");
-							}
-						}
-					} else {
-						promise.fail("error: unable to login, " + ar.cause());
+		
+		RequestBuilder rb = new RequestBuilder(webClient, token)
+				.setPort(controllerPort).setHost(controllerHost);
+		JsonObject creds = new JsonObject().put("username", username).put("password", password);
+		rb.makeAgentLoginRequest().sendJsonObject(creds, ar -> {
+			if (ar.succeeded()) {
+				HttpResponse<Buffer> response = ar.result();
+				if (response.statusCode() == 200) {
+					JsonObject body = response.bodyAsJsonObject();
+					String token = body.getString("token");
+					promise.complete(token);
+				} else {
+					if (response.statusCode() == 401) {
+						LOG.info("error: 401 - unauthorized");
+						promise.fail("error: 401 - unauthorized");
 					}
-				});
+				}
+			} else {
+				promise.fail("failed to login: " + ar.cause());
+			}
+		});
 		return promise.future();
 	}
 
 	@Override
 	public Future<Configuration> getConfiguration() {
 		Promise<Configuration> promise = Promise.promise();
-		RequestBuilder rb = new RequestBuilder(this.webClient, this.token).setPort(PORT).setHost(HOST);
+		
+		RequestBuilder rb = new RequestBuilder(webClient, token)
+				.setPort(controllerPort).setHost(controllerHost);
 		rb.makeGetConfigurationRequest().send(ar -> {
 					if (ar.succeeded()) {
 						HttpResponse<Buffer> response = ar.result();
@@ -101,8 +117,11 @@ public class RestClientImpl implements RestClient {
 		StatusNotification status = new StatusNotification(Status.UP);
 		LOG.info("sending status: " + status.toJsonObject());
 		String apiEndpoint = "/api/notification/status/" + status.getId();
-		HttpRequest<Buffer> request = this.webClient.put(PORT, HOST, apiEndpoint)
+		
+		HttpRequest<Buffer> request = this.webClient
+				.put(controllerPort, controllerHost, apiEndpoint)
 				.putHeader("Authorization", "Bearer " + this.token);
+		
 		request.sendJsonObject(status.toJsonObject(), ar-> {
 			if (ar.succeeded()) {
 				promise.complete();
