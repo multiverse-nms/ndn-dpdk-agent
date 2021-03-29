@@ -29,6 +29,7 @@ public class WebClientVerticle extends AbstractVerticle {
 	@Override
 	public void start(Promise<Void> promise) throws Exception {
 		LOG.info("starting " + this.getClass().getName() + " verticle");
+		if(!config().isEmpty()) {
 		LOG.info("config: " + config().getJsonObject("controller").encodePrettily());
 		
 		this.restClient = getRestClient();
@@ -39,7 +40,7 @@ public class WebClientVerticle extends AbstractVerticle {
 			if (ar.succeeded()) {
 				LOG.info("agent logged in.");
 				String token = ar.result();
-				// LOG.debug("TOKEN=" + token);
+				
 				this.restClient.setToken(token);
 
 				this.setStatusTask();
@@ -51,6 +52,7 @@ public class WebClientVerticle extends AbstractVerticle {
 				promise.fail(ar.cause());
 			}
 		});
+		}
 	}
 
 	private RestClient getRestClient() {

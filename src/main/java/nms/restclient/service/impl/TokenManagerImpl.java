@@ -13,7 +13,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import nms.restclient.AuthToken;
 import nms.restclient.EntryPoint;
-import nms.restclient.service.TokenManager;
+
 
 public class TokenManagerImpl {
 
@@ -25,8 +25,8 @@ public class TokenManagerImpl {
 	private static String LOGIN_ENDPOINT = "/login/agent";
 //	
 	public TokenManagerImpl(WebClient webClient, EntryPoint entryPoint) {
-		this.webClient = webClient;
-		this.entryPoint = entryPoint;
+		TokenManagerImpl.webClient = webClient;
+		TokenManagerImpl.entryPoint = entryPoint;
 		loadCredentials("data.properties");
 	}
 //	@Override
@@ -59,7 +59,7 @@ public class TokenManagerImpl {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		this.creds = new Login(prop.getProperty("username"), prop.getProperty("password"));
+		TokenManagerImpl.creds = new Login(prop.getProperty("username"), prop.getProperty("password"));
 	}
 
 	public static Future<AuthToken> getNewToken() {

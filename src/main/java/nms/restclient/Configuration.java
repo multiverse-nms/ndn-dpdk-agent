@@ -2,7 +2,6 @@ package nms.restclient;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -64,7 +63,7 @@ public class Configuration {
 
 	public void addRoute(Route route) {
 		this.routes.forEach(r -> {
-			if(r.equals(route)) {
+			if (r.equals(route)) {
 				return;
 			}
 		});
@@ -73,16 +72,16 @@ public class Configuration {
 
 	public void removeFace(int id) {
 		this.faces.forEach(face -> {
-			if(face.getCtrlId() == id) {
+			if (face.getCtrlId() == id) {
 				this.faces.remove(face);
 			}
 		});
 		this.facesMap.remove(id);
 	}
-	
+
 	public void removeRoute(Route other) {
 		this.routes.forEach(route -> {
-			if(route.equals(other)) {
+			if (route.equals(other)) {
 				this.routes.remove(route);
 			}
 		});
@@ -123,7 +122,7 @@ public class Configuration {
 	public Map<Integer, Integer> getFaceIDsMapping() {
 		return faceIDsMapping;
 	}
-	
+
 	public void addFaceIDsMapping(int ctrlId, int faceId) {
 		this.faceIDsMapping.put(ctrlId, faceId);
 	}

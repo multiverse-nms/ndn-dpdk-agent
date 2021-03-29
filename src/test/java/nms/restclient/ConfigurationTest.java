@@ -6,68 +6,91 @@ import static com.xebialabs.restito.semantics.Action.status;
 import static com.xebialabs.restito.semantics.Condition.get;
 import static com.xebialabs.restito.semantics.Condition.put;
 import static com.xebialabs.restito.semantics.Condition.withHeader;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static com.xebialabs.restito.semantics.Condition.parameter;
 
-import java.awt.List;
-import java.io.FileReader;
-import java.io.InputStream;
 
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.xebialabs.restito.server.StubServer;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
+
+import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import nms.restclient.service.impl.ConfigurationServiceImpl;
 
+@ExtendWith(VertxExtension.class)
 public class ConfigurationTest {
 	
 	private StubServer server;
 	private WebClient webClient;
 	
-          
+	   
 	@BeforeEach
 	public void start() {
 		server = new StubServer(8889).run();
+		
 	}
 
+	
 	@AfterEach
-	public void stop() {
-		server.stop();
-	}
+    public void finish(VertxTestContext testContext, Vertx vertx) {
+		System.out.println("after");
+        vertx.close(testContext.succeeding(response -> {
+            testContext.completeNow();
+        }));
+        server.stop();
+    }
 
-	//@Test
+
+	@Test
+	//@Timeout(value = 100, timeUnit = TimeUnit.SECONDS)
 	public void testRetrieveConfiguration(Vertx vertx, VertxTestContext testContext) throws Exception {
-		whenHttp(server).match(get("/configuration/candidate-config"), withHeader("Authentication")).then(resourceContent("exampleConfiguration.json"));
-
-		EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");
-		new ConfigurationServiceImpl(webClient, entryPoint).getConfiguration().onComplete(ar -> {
-			if (ar.failed()) {
-				testContext.failNow(ar.cause());
-			} else  {
-				
-				Configuration candidateConfig = ar.result();
-				testContext.verify(() -> assertThat(candidateConfig.getFaces().size(), is(1)));
+		whenHttp(server).match(get("/api/configuration/candidate-config"), withHeader("Authentication")).then(resourceContent("exampleConfiguration.json"));
+		
+		JsonObject config = new JsonObject()
+				.put("host", "localhost")
+				.put("port", server.getPort());
+		new RestClientImpl(vertx, config).getConfiguration().onComplete(testContext.succeeding(buffer -> {
+			testContext.verify(() -> {
+								testContext.verify(() -> assertThat(buffer.getFaces().size(), is(1)));
 				testContext.completeNow();
-			}
-		});
+				
+			});
+			testContext.failed();
+        }));
+
+		
+	}
+	@Test 
+	public void testSendStatus(Vertx vertx, VertxTestContext testContext) throws Exception {
+		whenHttp(server).match(put("/api/notification/status/"),parameter("statusId", "UP") ,withHeader("Authentication")).then(status(HttpStatus.OK_200));
+		JsonObject config = new JsonObject()
+				.put("host", "localhost")
+				.put("port", server.getPort());
+		new RestClientImpl(vertx, config).sendStatus().onFailure(testContext::failNow)
+           .onSuccess(buffer -> testContext.verify(() -> {
+        	   assertThat(buffer.toString()).isEqualTo("Ok");
+            testContext.completeNow();
+          }));
+		
 	}
 	
 	@Test
 	public void testSendRunningConfiguration(Vertx vertx, VertxTestContext testContext) throws Exception {
 		
 		  Configuration runningConfiguration = new Configuration();
-		  
 
-		whenHttp(server).match(put("/notification/status"), withHeader("Authentication")).then(status(HttpStatus.OK_200));
+		  whenHttp(server).match(put("/notification/status"), withHeader("Authentication")).then(status(HttpStatus.OK_200));
 		 
 		EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");
 		new ConfigurationServiceImpl(webClient, entryPoint).sendRunningConfiguration(runningConfiguration).onComplete(ar -> {
@@ -80,8 +103,8 @@ public class ConfigurationTest {
 	}
 	
 	@Test
-	public void  testCompareConfig (Vertx vertx,  VertxTestContext testContext) {		
-		RestClientImpl restClientImpl = new RestClientImpl(vertx, new JsonObject());
+	public void  testCompareConfig (Vertx vertx) {		
+		
 		Configuration running = new Configuration();
 		Configuration candidate = new Configuration();
 
@@ -102,8 +125,8 @@ public class ConfigurationTest {
 		running.addRoute(route);
 		candidate.addRoute(route1);
 		
-		restClientImpl.compareConfiguration(running, candidate).forEach(action -> {
+		new RestClientImpl(vertx, new JsonObject()).compareConfiguration(running, candidate).forEach(action -> {
 			System.out.println(action.encodePrettily());
-		});	
+		});
 	}	
 }

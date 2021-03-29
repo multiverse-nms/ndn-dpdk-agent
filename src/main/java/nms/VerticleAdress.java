@@ -16,7 +16,7 @@ public enum VerticleAdress {
 	}
 
 	public String getAdress() {
-		// TODO Auto-generated method stub
+		
 		return adress;
 	}
 }

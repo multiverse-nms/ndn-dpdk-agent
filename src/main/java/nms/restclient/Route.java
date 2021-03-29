@@ -54,7 +54,7 @@ public class Route {
 		this.cost = json.getInteger("cost");
 	}
 
-	private String decodePrefix(String base64Encoded) {
+	public String decodePrefix(String base64Encoded) {
 		LOG.debug("decodePrefix({})", base64Encoded);
 		byte[] base64Decoded = Base64.getDecoder().decode(base64Encoded);
 		ByteBuffer buffer = ByteBuffer.wrap(base64Decoded);
@@ -199,29 +199,9 @@ public class Route {
 
 	@Override
 	public boolean equals(Object o) {
-//		// self check
-//		if (this == o)
-//			return true;
-//		// null check
-//		if (o == null)
-//			return false;
-//		// type check and cast
-//		if (getClass() != o.getClass())
-//			return false;
-//		Route route = (Route) o;
-		// field comparison=
+
 		return Objects.equals(faceId, ((Route) o).faceId) && Objects.equals(prefix, ((Route) o).prefix) && Objects.equals(origin, ((Route) o).origin)  ;
 	}
 
-	public static void main(String[] args) {
-		JsonObject json = new JsonObject()
-				.put("prefix", "CARuaXN0CANnb3Y=")
-				.put("faceId", 3000)
-				.put("cost" , 0)
-				.put("origin" , 1);
-		
-		Route route = new Route(json);
-		String value = route.decodePrefix("CARuaXN0CANnb3Y=");
-		System.out.print(value);
-	}
+	
 }

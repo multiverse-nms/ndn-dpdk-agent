@@ -3,7 +3,6 @@ package nms.rib.service;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import net.named_data.jndn.Name;
 import nms.rib.Rib;
 import nms.rib.Route;
 

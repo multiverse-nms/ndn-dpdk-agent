@@ -308,42 +308,7 @@ public class ConfigurationHandler {
 		return promise.future();
 	}
 
-	public static void main(String[] args) {
-
-		Vertx vertx = Vertx.vertx();
-		ConfigurationHandler configHandler = new ConfigurationHandler(vertx);
-
-		Configuration running = configHandler.getRunningConfig();
-		Configuration candidate = new Configuration();
-
-		Face face = new Face(111, "a1.a1.a1.a1", "eth0", "b1.b1.b1.b1", "eth", 12);
-		Face face1 = new Face(112, "a1.a1.a1.a1", "eth0", "b1.b1.b1.b1", "eth", 12);
-		Face face2 = new Face(115, "a1.a1.a1.a1", "eth0", "b1.b1.b1.b1", "eth", 12);
-		Face face3 = new Face(112, "a1.a1.a1.a1", "eth0", "b1.b1.b1.b1", "eth", 12);
-		Face face4 = new Face(113, "a1.a1.a1.a1", "eth0", "b1.b1.b1.b1", "eth", 12);
-
-		running.addFace(face);
-		running.addFace(face1);
-
-		candidate.addFace(face2);
-		candidate.addFace(face3);
-		candidate.addFace(face4);
-
-		Route route = new Route("/a/b/c", 1101, 0, 10, true, false);
-		Route route1 = new Route("/a/b/c", 1101, 0, 10, true, false);
-
-		running.addRoute(route);
-		candidate.addRoute(route1);
-
-		configHandler.compare(candidate).onComplete(ar -> {
-			if (ar.succeeded()) {
-				ar.result().forEach(json -> {
-					System.out.println(json.encodePrettily());
-				});
-			}
-		});
-
-	}
+	
 
 	private Configuration getRunningConfig() {
 		return this.running;

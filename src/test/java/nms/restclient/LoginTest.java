@@ -5,8 +5,7 @@ import static com.xebialabs.restito.semantics.Action.resourceContent;
 
 import static com.xebialabs.restito.semantics.Condition.post;
 import static com.xebialabs.restito.semantics.Condition.withPostBodyContaining;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,8 +16,12 @@ import com.xebialabs.restito.server.StubServer;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 
 @ExtendWith(VertxExtension.class)
 public class LoginTest {
@@ -31,35 +34,44 @@ public class LoginTest {
 	public void start() {
 		server = new StubServer(8889).run();
 	}
-
+	
 	@AfterEach
-	public void stop() {
-		server.stop();
-	}
+    public void finish(VertxTestContext testContext, Vertx vertx) {
+        System.out.println("after");
+        vertx.close(testContext.succeeding(response -> {
+            testContext.completeNow();
+        }));
+        server.stop();
+    }
 
 	
-	@Test
+	@Test 
 	public void testLogin(Vertx vertx, VertxTestContext testContext) throws Exception {
 		
-		String user = "omar";
-		String pass = "omar@1234";
+		String user = "asmaa";
+		String pass = "asmaa@1234";
 		
-		whenHttp(server).match(post("/login/agent"), withPostBodyContaining("\"username\":\"omar\",\"password\":\"omar@1234\"")).then(resourceContent("token.json"));
-		
-		// EntryPoint entryPoint = new EntryPoint(server.getPort(), "localhost");
-		JsonObject controller = new JsonObject()
+		whenHttp(server).match(post("/login/agent"), withPostBodyContaining("\"username\":\"asmaa\",\"password\":\"asmaa@1234\""))
+		.then(resourceContent("token.json"));
+		//server.secured();
+		Checkpoint deploymentCheckpoint = testContext.checkpoint();
+		Checkpoint requestCheckpoint = testContext.checkpoint(10);
+		JsonObject config = new JsonObject()
 				.put("http.host", "localhost")
 				.put("http.port", server.getPort());
-		new RestClientImpl(vertx, controller).login(user, pass).onComplete(ar -> {
-			if (ar.failed()) {
-				testContext.failNow(ar.cause());
-			} else {
-				String token = ar.result();
-				testContext.verify(() -> assertThat(token, is(dummyToken)));
+		new RestClientImpl(vertx, config).login(user, pass).onComplete(testContext.succeeding(buffer -> {
+			testContext.verify(() -> {
+				deploymentCheckpoint.flag();
+				assertThat(buffer.toString(), is(dummyToken));
 				testContext.completeNow();
-			}
-		}); 
+				requestCheckpoint.flag();
+			});
+			testContext.failed();
+        }));
+		
 	}
+	
+	
 
 
 	

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+
 import net.named_data.jndn.Name;
 
 public class NexthopList {
