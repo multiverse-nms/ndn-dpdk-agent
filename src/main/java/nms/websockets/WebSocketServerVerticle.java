@@ -103,6 +103,7 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 	}
 
 	public void stop(Promise<Void> startFuture) {
+		LOG.info("stopping verticle" ,this.getClass().getName());
 	}
 
 	private void initVerticlesMap() {

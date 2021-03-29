@@ -1,7 +1,6 @@
 package nms.rib.service;
 
 import io.vertx.core.Future;
-import net.named_data.jndn.Name;
 import nms.rib.Rib;
 import nms.rib.Route;
 

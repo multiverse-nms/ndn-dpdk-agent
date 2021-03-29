@@ -1,12 +1,9 @@
 package nms.restclient;
 import java.util.List;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 
-import io.vertx.core.Future;
 
 
 public interface RestClient {

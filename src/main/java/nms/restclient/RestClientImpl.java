@@ -37,16 +37,18 @@ public class RestClientImpl implements RestClient {
 	public RestClientImpl(Vertx vertx, JsonObject config) {	
 		this.controllerHost = config.getString("http.host", DEFAULT_HTTP_HOST);
 		this.controllerPort = config.getInteger("http.port", DEFAULT_HTTP_PORT);
-		
+		boolean controllerssl = false;
 		WebClientOptions options = new WebClientOptions();
+		if(controllerssl) {
+		
 		options.setSsl(true);
 		
 		// hostname verification
 		options.setVerifyHost(false);
 		
 		// trust Multiverse CA
-		options.setPemTrustOptions(new PemTrustOptions().addCertPath("/opt/data/ca/MultiverseRootCA.crt.pem"));
-		
+		options.setPemTrustOptions(new PemTrustOptions().addCertPath("mnms-rootCA.crt.pem"));
+		}
 		this.webClient = WebClient.create(vertx, options);
 		this.jsonRpcHelper = new JsonRpcHelper();
 	}
@@ -90,7 +92,6 @@ public class RestClientImpl implements RestClient {
 						if (response.statusCode() == 200) {
 							Configuration config = new Configuration(response.bodyAsJsonObject());
 							LOG.debug("candidate config={}",config);
-//							Configuration config = new Gson().fromJson(response.bodyAsString(), Configuration.class);
 							promise.complete(config);
 						} else {
 							if (response.statusCode() == 401) {

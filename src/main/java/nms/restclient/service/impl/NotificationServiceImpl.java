@@ -29,7 +29,7 @@ public class NotificationServiceImpl implements NotificationService {
               this.webClient = webClient;
               this.entryPoint = entryPoint;
               this.credsProvider = new CredentialsProvider("data.properties");
-      		TokenProvider.getFreshToken(credsProvider.getUsername(), credsProvider.getPassword()).onComplete(ar -> {
+      		  TokenProvider.getFreshToken(credsProvider.getUsername(), credsProvider.getPassword()).onComplete(ar -> {
       			if (ar.succeeded()) {
       				this.token = ar.result();
       			}

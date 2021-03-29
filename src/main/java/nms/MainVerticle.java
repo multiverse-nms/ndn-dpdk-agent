@@ -61,6 +61,7 @@ public class MainVerticle extends AbstractVerticle {
 				LOG.error("failed to retrieve the verticles configuration");
 			} else {
 				JsonObject configServerVerticle = ar.result().getJsonObject("main.verticle");
+				LOG.info("configServerVerticle",configServerVerticle);
 				deployAllVerticles(configServerVerticle).onComplete(ar1 -> {
 					if (ar1.succeeded()) {
 						LOG.info("all verticles were deployed successfully");
@@ -75,15 +76,23 @@ public class MainVerticle extends AbstractVerticle {
 	}
 
 	private Future<Void> deployAllVerticles(JsonObject config) {
+		LOG.info("config",config());
 		DeploymentOptions ribVerticleOptions = new DeploymentOptions().setConfig(config().getJsonObject("rib.verticle"));
 		DeploymentOptions fwVerticleOptions = new DeploymentOptions().setConfig(config().getJsonObject("forwarder.verticle"));
 		DeploymentOptions wsVerticleOptions = new DeploymentOptions().setConfig(config().getJsonObject("websockets.verticle"));
-		//DeploymentOptions webClientVerticleOptions = new DeploymentOptions().setConfig(config().getJsonObject("webclient.verticle"));
-
-		return this.deployVerticle(ForwarderVerticle.class.getName(), fwVerticleOptions)
+		DeploymentOptions webClientVerticleOptions = new DeploymentOptions().setConfig(config().getJsonObject("controller"));
+		
+		Future<Void> deployedVerticle = this.deployVerticle(ForwarderVerticle.class.getName(), fwVerticleOptions)
 				.compose(v -> deployVerticle(RibVerticle.class.getName(), ribVerticleOptions))
 				.compose(v -> deployVerticle(WebSocketServerVerticle.class.getName(), wsVerticleOptions));
-			//	.compose(v -> deployVerticle(WebClientVerticle.class.getName(), webClientVerticleOptions));
+		
+		if (!config.isEmpty()) {
+			return this.deployVerticle(
+						WebClientVerticle.class.getName(), webClientVerticleOptions);
+		}
+		
+		return deployedVerticle;
+		
 	}
 
 	private static Buffer resolveHosts(String filename) throws IOException, URISyntaxException {
@@ -99,15 +108,22 @@ public class MainVerticle extends AbstractVerticle {
 			reader.read(bytes);
 			reader.close();
 		}
-		LOG.info("bytes = {}", bytes);
+		
 		return Buffer.buffer(bytes);
 	}
 
-	private ConfigRetriever getConfigRetriever(String filename) {
-		ConfigStoreOptions fileStore = new ConfigStoreOptions().setType("file")
-				.setConfig(new JsonObject().put("path", filename));
+	private ConfigRetriever getConfigRetriever(String filename) throws URISyntaxException {
+		URL res = getClass().getClassLoader().getResource(filename);
+		
+		File file = Paths.get(res.toURI()).toFile();
+		String absolutePath = file.getAbsolutePath();
+	
+		ConfigStoreOptions fileStore = new ConfigStoreOptions().setType("file").setFormat("json")
+				.setConfig(new JsonObject().put("path", absolutePath));
+		
 		ConfigRetrieverOptions configRetrieverOptions = new ConfigRetrieverOptions().addStore(fileStore);
 		ConfigRetriever retriever = ConfigRetriever.create(vertx, configRetrieverOptions);
+		
 		return retriever;
 	}
 
@@ -118,9 +134,9 @@ public class MainVerticle extends AbstractVerticle {
 		} else {
 			vertx.deployVerticle(verticle, options, handleDeployment(verticle, promise));
 		}
-		return promise.future();
+		return promise.future().map(r ->null);
 	}
-
+	
 	private <T> Handler<AsyncResult<T>> handleDeployment(String verticle, Promise<Void> promise) {
 		return ar -> {
 			if (ar.succeeded()) {

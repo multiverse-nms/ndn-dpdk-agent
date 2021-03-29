@@ -1,9 +1,5 @@
 package nms.restclient.service.impl;
 
-import java.util.ArrayList;
-
-import java.util.List;
-
 import com.google.gson.Gson;
 
 import io.vertx.core.AsyncResult;
@@ -17,8 +13,7 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import nms.restclient.Configuration;
 import nms.restclient.EntryPoint;
-import nms.restclient.Face;
-import nms.restclient.Route;
+
 import nms.restclient.service.ConfigurationService;
 
 public class ConfigurationServiceImpl implements ConfigurationService {
@@ -37,11 +32,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		this.webClient = webClient;
 		this.entryPoint = entryPoint;
 		this.credsProvider = new CredentialsProvider("data.properties");
-		TokenProvider.getFreshToken(credsProvider.getUsername(), credsProvider.getPassword()).onComplete(ar -> {
-			if (ar.succeeded()) {
-				this.token = ar.result();
-			}
-		});
+		
+		  TokenProvider.getFreshToken(credsProvider.getUsername(),credsProvider.getPassword())
+		  .onComplete(ar -> { if (ar.succeeded()) {
+		  this.token = ar.result(); } else { System.out.println("error"); } });
+		 
 	}
 
 	@Override
@@ -75,6 +70,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		});
 		return promise.future();
 	}
+	
 	@Override
 	public Future<Void> sendRunningConfiguration(Configuration runningConfiguration) {
 		Promise<Void> promise = Promise.promise();
