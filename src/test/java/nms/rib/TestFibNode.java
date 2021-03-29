@@ -89,19 +89,13 @@ class TestFibNode {
 	
 	@Test
 	void testDiff() {
-		
-//		 /    : 0
-//		 /a   : 1
-//		 /a/b : 2
-//		 /a/c : 3
-//		 /d   : 4
-		
+	
 		Fib fib1 = new Fib();
 		fib1.getRoot().addNexthop(0, 0);
 		FibNode nodeA = fib1.findOrInsertEntry(new Name("/a"));
 		nodeA.addNexthop(1, 10);
 		nodeA.addNexthop(7, 5);
-		// 7:5  1:10
+	
 		FibNode nodeAB = fib1.findOrInsertEntry(new Name("/a/b"));
 		nodeAB.addNexthop(2, 20);
 		FibNode nodeAC = fib1.findOrInsertEntry(new Name("/a/c"));
@@ -116,7 +110,7 @@ class TestFibNode {
 		FibNode nodeA2 = fib2.findOrInsertEntry(new Name("/a"));
 		nodeA2.addNexthop(1, 11);
 		nodeA2.addNexthop(7, 20);
-		// 1:11  7:20
+		
 		FibNode nodeAB2 = fib2.findOrInsertEntry(new Name("/a/b"));
 		nodeAB2.addNexthop(2, 20);
 		FibNode nodeAC2 = fib2.findOrInsertEntry(new Name("/a/c"));
