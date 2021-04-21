@@ -39,12 +39,7 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 
 		HttpServer server = vertx.createHttpServer();
 		LOG.info("starting websocket server");
-
-		server.connectionHandler(connection -> {
-			LOG.info("A client connected");
-		});
 		server.webSocketHandler(new Handler<ServerWebSocket>() {
-
 			@Override
 			public void handle(ServerWebSocket socket) {
 				socket.textMessageHandler(msg -> {
@@ -71,7 +66,6 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 
 				socket.closeHandler(message -> {
 					if (socket.isClosed()) {
-						System.out.println(" client disconnected? " + socket.isClosed());
 						String method = "Client.Disconnect";
 						String id = UUID.randomUUID().toString();
 						Map<String, Object> params = new HashMap<String, Object>();
@@ -103,7 +97,7 @@ public class WebSocketServerVerticle extends AbstractVerticle {
 	}
 
 	public void stop(Promise<Void> startFuture) {
-		LOG.info("stopping verticle" ,this.getClass().getName());
+		LOG.info("stopping verticle", this.getClass().getName());
 	}
 
 	private void initVerticlesMap() {

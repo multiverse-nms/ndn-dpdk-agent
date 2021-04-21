@@ -23,6 +23,7 @@ import nms.forwarder.api.EventBusEndpoint;
 import nms.forwarder.model.face.EtherFace;
 import nms.forwarder.model.face.Face;
 import nms.forwarder.model.face.FaceData;
+import nms.forwarder.model.face.FaceStoreRecord;
 import nms.forwarder.model.face.MemifFace;
 import nms.forwarder.model.fib.FibEntry;
 import nms.forwarder.model.version.Version;
@@ -35,12 +36,12 @@ import org.slf4j.LoggerFactory;
 public class ForwarderVerticle extends AbstractVerticle {
 
 	private static Logger LOG = LoggerFactory.getLogger(ForwarderVerticle.class.getName());
-	static Map<String, List<Object>> storedFaces = new HashMap<>();
+	static Map<String, FaceStoreRecord> faceStore = new HashMap<>();
 	static String ClientId;
 
 	@Override
 	public void start(Promise<Void> promise) {
-		LOG.info("starting verticle");
+		LOG.info("starting forwarder verticle");
 		// setup EventBus
 		this.consumeEventBus(VerticleAdress.forwarder_verticle.getAdress(), promise);
 	}
@@ -80,12 +81,20 @@ public class ForwarderVerticle extends AbstractVerticle {
 				this.createFaceFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
 						LOG.debug("Face={}", ar.result());
-						List<Integer> faces = new ArrayList<Integer>();
-						faces.add(ar.result().getInteger("id"));
-						List<Object> created = new ArrayList<Object>();
-						created.add(0, faces);
-						created.add(1, ar.result().getBoolean("facescope"));
-						storedFaces.put(ClientId, created);
+						FaceStoreRecord record = faceStore.get(ClientId);
+						int Id = ar.result().getInteger("id");
+						boolean scope = ar.result().getBoolean("facescope");
+						// record = {faces, scope}
+						if (record != null) {
+							record.addFace(Id);
+							record.setFaceScope(scope);
+							// add test to check if record was updated
+						} else {
+							FaceStoreRecord newRecord = new FaceStoreRecord();
+							newRecord.addFace(Id);
+							newRecord.setFaceScope(scope);
+							faceStore.put(ClientId, newRecord);
+						}
 						message.reply(ar.result());
 					} else {
 						message.reply(new JsonObject().put("status", "error").put("message", ar.cause().getMessage()));
@@ -473,21 +482,17 @@ public class ForwarderVerticle extends AbstractVerticle {
 		Map<String, Object> params = req.getNamedParams();
 		String clientId = (String) params.get("clientId");
 
-		if (storedFaces.containsKey(clientId)) {
+		if (faceStore.containsKey(clientId)) {
+			FaceStoreRecord record = faceStore.get(ClientId);
 
-			List<Object> object = storedFaces.get(clientId);
-			boolean facescope = (boolean) object.get(1);
-			@SuppressWarnings("unchecked")
-			List<Integer> FaceId = (List<Integer>) object.get(0);
+			List<Integer> FaceIds = record.getFaces();
+			boolean faceScope = record.getScope();
 
-			LOG.debug("facescope={}", facescope);
-			LOG.debug("faceid={}", FaceId);
-
-			FaceId.forEach(l -> {
-				if (facescope == true) {
+			FaceIds.forEach(faceId -> {
+				if (faceScope == true) {
 					String method = "Face.Destroy";
 					String id = UUID.randomUUID().toString();
-					params.put("Id", l);
+					params.put("Id", faceId);
 					JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
 					String jsonString = reqOut.toString();
 					JsonObject json = new JsonObject(jsonString);
@@ -496,6 +501,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 						this.destroyFaceFuture_JsonRPC(request).onComplete(ar -> {
 							if (ar.succeeded()) {
 								LOG.debug("FaceId={}", ar.result());
+
 							}
 
 							else {
@@ -503,6 +509,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 							}
 
 						});
+
 					} catch (JSONRPC2ParseException e) {
 
 						e.printStackTrace();
@@ -510,7 +517,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 				} else {
 					LOG.debug("Face can't be destroyed");
 				}
-
+				record.removeFace(faceId);
 			});
 		}
 	}

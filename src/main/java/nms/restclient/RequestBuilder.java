@@ -47,7 +47,9 @@ public class RequestBuilder {
 	public HttpRequest<Buffer> makeGetConfigurationRequest() {
 		String apiEndpoint = "/api/configuration/candidate-config";
 		HttpRequest<Buffer> request = webClient.get(port, host, apiEndpoint)
-				.putHeader("Authorization", "Bearer " + this.token);
+				.putHeader("Authorization", "Bearer " + this.token)
+				.putHeader("Content-Type", "application/json");
+				
 		return request;
 	}
 
