@@ -29,13 +29,14 @@ public class WebClientVerticle extends AbstractVerticle {
 	@Override
 	public void start(Promise<Void> promise) throws Exception {
 		LOG.info("starting " + this.getClass().getName() + " verticle");
-		if(!config().isEmpty()) {
-		LOG.info("config: " + config().getJsonObject("controller").encodePrettily());
+		
+		System.out.println("configuration"+config());
+		//LOG.info("config: " + config().getJsonObject("controller").encodePrettily());
 		
 		this.restClient = getRestClient();
 		this.configHandler = new ConfigurationHandler(vertx);
 		
-		JsonObject creds = config().getJsonObject("controller").getJsonObject("login");
+		JsonObject creds = config().getJsonObject("login");
 		this.login(creds.getString("username"), creds.getString("password")).onComplete(ar -> {
 			if (ar.succeeded()) {
 				LOG.info("agent logged in.");
@@ -53,10 +54,11 @@ public class WebClientVerticle extends AbstractVerticle {
 			}
 		});
 		}
-	}
+//	}
 
 	private RestClient getRestClient() {
-		return new RestClientImpl(vertx, config().getJsonObject("controller"));
+		//System.out.println(""+config().getJsonObject("controller"));
+		return new RestClientImpl(vertx, config());
 	}
 
 	private Future<String> login(String username, String password) {
@@ -64,7 +66,8 @@ public class WebClientVerticle extends AbstractVerticle {
 	}
 
 	private void setStatusTask() {
-		long statusPeriod = config().getJsonObject("controller")
+		long statusPeriod = config()
+				//config().getJsonObject("controller")
 				.getLong("status.period", DEFAULT_STATUS_PERIOD);
 		
 		statusTaskId = vertx.setPeriodic(statusPeriod, id -> {
@@ -79,7 +82,8 @@ public class WebClientVerticle extends AbstractVerticle {
 	}
 
 	private void setConfigTask() {
-		long configPeriod = config().getJsonObject("controller")
+		long configPeriod = config()
+				//getJsonObject("controller")
 				.getLong("config.period", DEFAULT_CONFIG_PERIOD);
 		
 		configTaskId = vertx.setPeriodic(configPeriod, id -> {

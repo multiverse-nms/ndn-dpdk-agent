@@ -16,7 +16,6 @@ import com.xebialabs.restito.server.StubServer;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import static org.hamcrest.CoreMatchers.is;
@@ -32,7 +31,9 @@ public class LoginTest {
 
 	@BeforeEach
 	public void start() {
-		server = new StubServer(8889).run();
+		server = new StubServer(8889);
+		server.secured();
+		server.run();
 	}
 	
 	@AfterEach
@@ -48,23 +49,24 @@ public class LoginTest {
 	@Test 
 	public void testLogin(Vertx vertx, VertxTestContext testContext) throws Exception {
 		
-		String user = "asmaa";
-		String pass = "asmaa@1234";
+		String user = "test";
+		String pass = "test@1234";
 		
-		whenHttp(server).match(post("/login/agent"), withPostBodyContaining("\"username\":\"asmaa\",\"password\":\"asmaa@1234\""))
+		whenHttp(server).match(post("/api/login/agent"), withPostBodyContaining("\"username\":\"test\",\"password\":\"test@1234\""))
 		.then(resourceContent("token.json"));
-		//server.secured();
-		Checkpoint deploymentCheckpoint = testContext.checkpoint();
-		Checkpoint requestCheckpoint = testContext.checkpoint(10);
+		
+		
+
 		JsonObject config = new JsonObject()
 				.put("http.host", "localhost")
 				.put("http.port", server.getPort());
+		
 		new RestClientImpl(vertx, config).login(user, pass).onComplete(testContext.succeeding(buffer -> {
 			testContext.verify(() -> {
-				deploymentCheckpoint.flag();
+				
 				assertThat(buffer.toString(), is(dummyToken));
 				testContext.completeNow();
-				requestCheckpoint.flag();
+				
 			});
 			testContext.failed();
         }));
