@@ -1,5 +1,6 @@
 package nms.rib.verticle;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,8 +15,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import net.named_data.jndn.Name;
+import net.named_data.jndn.encoding.EncodingException;
 import nms.VerticleAdress;
 import nms.forwarder.api.EventBusEndpoint;
+import nms.forwarder.model.face.PrefixAnnouncement;
 import nms.rib.Fib;
 import nms.rib.Rib;
 import nms.rib.Route;
@@ -60,20 +63,77 @@ public class RibVerticle extends AbstractVerticle {
 			LOG.debug("METHOD={}", method);
 
 			Map<String, Object> params = req.getNamedParams();
-
+            		
 			if (method.equals(EventBusEndpoint.ADD_ROUTE.getName())) {
-				Name prefix = new Name((String) params.get("prefix"));
-				Number faceNumber = (Number) params.get("faceFwdId");
+				Name prefix = new Name((String) params.get("Prefix"));
+				Number faceNumber = (Number) params.get("FaceId");
+				//Number faceNumber = (Number) params.get("faceFwdId");
 				int faceId = faceNumber.intValue();
-				Number originNumber = (Number) params.get("origin");
+				//Number originNumber = (Number) params.get("origin");
+				Number originNumber = (Number) params.get("Origin");
 				int origin = originNumber.intValue();
-				Number costNumber = (Number) params.get("cost");
+				//Number costNumber = (Number) params.get("cost");
+				Number costNumber = (Number) params.get("Cost");
 				int cost = costNumber.intValue();
 				LOG.debug("prefix={}, faceId={}, origin={}, cost={}", prefix.toUri(), faceId, origin, cost);
 
 				Route route = new Route(prefix, faceId, origin);
 				route.setCost(cost);
 				ribService.addRoute(route).onComplete(ar -> {
+					sendFibCommands(ar.result()).onComplete(ar1 -> {
+						if (ar1.succeeded()) {
+							message.reply(new JsonObject().put("status", "success").put("message", "FIB updated"));
+						} else {
+							message.reply(
+									new JsonObject().put("status", "error").put("message", "something went wrong"));
+						}
+					});
+				});
+			}
+			
+			if(method.equals(EventBusEndpoint.ANNOUNCE_PREFIX.getName())) {
+				PrefixAnnouncement pa = new PrefixAnnouncement();
+				
+				byte[] todecode = pa.hexStringToByteArray((String) params.get("PA"));
+				
+				ByteBuffer buffer = ByteBuffer.wrap(todecode);
+				
+				
+				try {
+					pa.decodePrefixAnnouncement(pa, buffer, true);
+				} catch (EncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				Name name = pa.getAnnouncedName();
+				Number faceNumber = (Number) params.get("FaceId");
+				int faceId = faceNumber.intValue();
+				LOG.debug("prefix={}, faceId={}", name.getPrefix(-3), faceId);
+
+				int origin = 129;
+				Route route = new Route(name.getPrefix(-3), faceId, origin );
+			
+				ribService.addRoute(route).onComplete(ar -> {
+					sendFibCommands(ar.result()).onComplete(ar1 -> {
+						if (ar1.succeeded()) {
+							message.reply(new JsonObject().put("status", "success").put("message", "FIB updated with the anounced prefix"));
+						} else {
+							message.reply(
+									new JsonObject().put("status", "error").put("message", "something went wrong"));
+						}
+					});
+				});
+			}
+			
+			if (method.equals(EventBusEndpoint.WITHDRAW_PREFIX.getName())) {
+				Name name = new Name((String) params.get("prefix"));
+				Number faceNumber = (Number) params.get("faceId");
+				int faceId = faceNumber.intValue();
+				Number originNumber = (Number) params.get("origin");
+				int origin = originNumber.intValue();
+
+				ribService.removeRoute(new Route(name, faceId, origin)).onComplete(ar -> {
 					sendFibCommands(ar.result()).onComplete(ar1 -> {
 						if (ar1.succeeded()) {
 							message.reply(new JsonObject().put("status", "success").put("message", "FIB updated"));

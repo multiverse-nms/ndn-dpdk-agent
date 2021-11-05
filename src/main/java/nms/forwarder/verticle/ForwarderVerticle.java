@@ -78,22 +78,26 @@ public class ForwarderVerticle extends AbstractVerticle {
 			}
 
 			if (method.equals(EventBusEndpoint.CREATE_FACE.getName())) {
+				LOG.debug("faceStore before ={}", faceStore);
 				this.createFaceFuture_JsonRPC(req).onComplete(ar -> {
 					if (ar.succeeded()) {
 						LOG.debug("Face={}", ar.result());
 						FaceStoreRecord record = faceStore.get(ClientId);
 						int Id = ar.result().getInteger("id");
 						boolean scope = ar.result().getBoolean("facescope");
+						// clientID == record
 						// record = {faces, scope}
 						if (record != null) {
 							record.addFace(Id);
 							record.setFaceScope(scope);
+							LOG.debug("record={}", record);
 							// add test to check if record was updated
 						} else {
 							FaceStoreRecord newRecord = new FaceStoreRecord();
 							newRecord.addFace(Id);
 							newRecord.setFaceScope(scope);
 							faceStore.put(ClientId, newRecord);
+							LOG.debug("faceStore={}", faceStore);
 						}
 						message.reply(ar.result());
 					} else {
@@ -481,10 +485,15 @@ public class ForwarderVerticle extends AbstractVerticle {
 	private void OnClientDisconnect(JSONRPC2Request req) {
 		Map<String, Object> params = req.getNamedParams();
 		String clientId = (String) params.get("clientId");
-
+		LOG.debug("faceStore={}",faceStore);
 		if (faceStore.containsKey(clientId)) {
-			FaceStoreRecord record = faceStore.get(ClientId);
-
+			
+			FaceStoreRecord record = faceStore.get(clientId);
+			LOG.debug("record={}"+ record);
+			if(record == null) {
+				LOG.debug("record={}");
+			}
+			else {
 			List<Integer> FaceIds = record.getFaces();
 			boolean faceScope = record.getScope();
 
@@ -493,17 +502,17 @@ public class ForwarderVerticle extends AbstractVerticle {
 					String method = "Face.Destroy";
 					String id = UUID.randomUUID().toString();
 					params.put("Id", faceId);
+					LOG.debug("params={}",params);
 					JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
 					String jsonString = reqOut.toString();
 					JsonObject json = new JsonObject(jsonString);
+					LOG.debug("json={}",json);
 					try {
 						JSONRPC2Request request = JSONRPC2Request.parse(json.toString());
 						this.destroyFaceFuture_JsonRPC(request).onComplete(ar -> {
 							if (ar.succeeded()) {
 								LOG.debug("FaceId={}", ar.result());
-
 							}
-
 							else {
 								LOG.debug("Something went wrong");
 							}
@@ -511,7 +520,6 @@ public class ForwarderVerticle extends AbstractVerticle {
 						});
 
 					} catch (JSONRPC2ParseException e) {
-
 						e.printStackTrace();
 					}
 				} else {
@@ -519,7 +527,7 @@ public class ForwarderVerticle extends AbstractVerticle {
 				}
 				record.removeFace(faceId);
 			});
-		}
+		}}
 	}
 
 	@Override
